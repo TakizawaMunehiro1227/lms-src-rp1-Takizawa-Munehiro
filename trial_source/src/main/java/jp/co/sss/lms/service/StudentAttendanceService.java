@@ -1,6 +1,8 @@
 package jp.co.sss.lms.service;
 
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -71,6 +73,46 @@ public class StudentAttendanceService {
 		}
 
 		return attendanceManagementDtoList;
+	}
+
+	/**
+	 * Task25 過去日の勤怠未入力チェック
+	 *
+	 * @param attendanceManagementDtoList 勤怠一覧
+	 * @return 未入力がある場合true
+	 */
+	public boolean hasPastUnenteredAttendance(
+			List<AttendanceManagementDto> attendanceManagementDtoList) {
+
+		LocalDate today = LocalDate.now();
+		ZoneId zoneId = ZoneId.systemDefault();
+
+		for (AttendanceManagementDto dto : attendanceManagementDtoList) {
+
+			if (dto.getTrainingDate() == null) {
+				continue;
+			}
+
+			LocalDate trainingDate = dto.getTrainingDate()
+			        .toInstant()
+			        .atZone(zoneId)
+			        .toLocalDate();
+
+			// 過去日の場合
+			if (trainingDate.isBefore(today)) {
+
+				// 出勤時間または退勤時間が未入力の場合
+				if (dto.getTrainingStartTime() == null
+						|| dto.getTrainingStartTime().trim().isEmpty()
+						|| dto.getTrainingEndTime() == null
+						|| dto.getTrainingEndTime().trim().isEmpty()) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
