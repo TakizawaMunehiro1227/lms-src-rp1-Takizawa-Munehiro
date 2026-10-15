@@ -1,8 +1,7 @@
 package jp.co.sss.lms.service;
 
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,43 +75,26 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task25 過去日の勤怠未入力チェック
+	 * Task25 過去日の出席未入力チェック
 	 *
-	 * @param attendanceManagementDtoList 勤怠一覧
-	 * @return 未入力がある場合true
+	 * @return 未入力がある場合true、ない場合false
+	 * @throws ParseException 日付変換時の例外
 	 */
-	public boolean hasPastUnenteredAttendance(
-			List<AttendanceManagementDto> attendanceManagementDtoList) {
+	public boolean notEnterCheck() throws ParseException {
 
-		LocalDate today = LocalDate.now();
-		ZoneId zoneId = ZoneId.systemDefault();
+		// 今日の日付を取得
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = new Date();
+		Date trainingDate = df.parse(df.format(date));
 
-		for (AttendanceManagementDto dto : attendanceManagementDtoList) {
+		// 過去日の出席未入力件数を取得
+		Integer notEnterCount = tStudentAttendanceMapper.notEnterCount(
+				loginUserDto.getLmsUserId(),
+				Constants.DB_FLG_FALSE,
+				trainingDate);
 
-			if (dto.getTrainingDate() == null) {
-				continue;
-			}
-
-			LocalDate trainingDate = dto.getTrainingDate()
-			        .toInstant()
-			        .atZone(zoneId)
-			        .toLocalDate();
-
-			// 過去日の場合
-			if (trainingDate.isBefore(today)) {
-
-				// 出勤時間または退勤時間が未入力の場合
-				if (dto.getTrainingStartTime() == null
-						|| dto.getTrainingStartTime().trim().isEmpty()
-						|| dto.getTrainingEndTime() == null
-						|| dto.getTrainingEndTime().trim().isEmpty()) {
-
-					return true;
-				}
-			}
-		}
-
-		return false;
+		// 未入力件数が0より大きい場合trueを返す
+		return notEnterCount > 0;
 	}
 
 	/**
