@@ -244,6 +244,11 @@ public class StudentAttendanceService {
 		attendanceForm.setLeaveFlg(loginUserDto.getLeaveFlg());
 		attendanceForm.setBlankTimes(attendanceUtil.setBlankTime());
 
+		// 時間の選択肢を設定
+		attendanceForm.setHourTimes(attendanceUtil.setHourTime());
+		// 分の選択肢を設定
+		attendanceForm.setMinuteTimes(attendanceUtil.setMinuteTime());
+
 		// 途中退校している場合のみ設定
 		if (loginUserDto.getLeaveDate() != null) {
 			attendanceForm
@@ -259,8 +264,28 @@ public class StudentAttendanceService {
 					.setStudentAttendanceId(attendanceManagementDto.getStudentAttendanceId());
 			dailyAttendanceForm
 					.setTrainingDate(dateUtil.toString(attendanceManagementDto.getTrainingDate()));
-			dailyAttendanceForm
-					.setTrainingStartTime(attendanceManagementDto.getTrainingStartTime());
+
+			//Task26
+			String startTime = attendanceManagementDto.getTrainingStartTime();
+			dailyAttendanceForm.setTrainingStartTime(startTime);
+
+			// 出勤時間を時と分に分割
+			TrainingTime start = new TrainingTime(startTime);
+			if (start.isNotBlank()) {
+				dailyAttendanceForm.setTrainingStartTimeHour(start.getHour());
+				dailyAttendanceForm.setTrainingStartTimeMinute(start.getMinute());
+			}
+
+			String endTime = attendanceManagementDto.getTrainingEndTime();
+			dailyAttendanceForm.setTrainingEndTime(endTime);
+
+			// 退勤時間を時と分に分割
+			TrainingTime end = new TrainingTime(endTime);
+			if (end.isNotBlank()) {
+				dailyAttendanceForm.setTrainingEndTimeHour(end.getHour());
+				dailyAttendanceForm.setTrainingEndTimeMinute(end.getMinute());
+			}
+
 			dailyAttendanceForm.setTrainingEndTime(attendanceManagementDto.getTrainingEndTime());
 			if (attendanceManagementDto.getBlankTime() != null) {
 				dailyAttendanceForm.setBlankTime(attendanceManagementDto.getBlankTime());
@@ -356,6 +381,39 @@ public class StudentAttendanceService {
 		}
 		// 完了メッセージ
 		return messageUtil.getMessage(Constants.PROP_KEY_ATTENDANCE_UPDATE_NOTICE);
+	}
+
+	/**
+	 * Task26 出退勤時間の形式変換
+	 *
+	 * @param attendanceForm 勤怠フォーム
+	 */
+	public void formatConversion(AttendanceForm attendanceForm) {
+
+		for (DailyAttendanceForm dailyAttendanceForm : attendanceForm.getAttendanceList()) {
+
+			// 出勤時間の変換
+			Integer startHour = dailyAttendanceForm.getTrainingStartTimeHour();
+			Integer startMinute = dailyAttendanceForm.getTrainingStartTimeMinute();
+
+			if (startHour != null && startMinute != null) {
+				dailyAttendanceForm.setTrainingStartTime(
+						String.format("%02d:%02d", startHour, startMinute));
+			} else {
+				dailyAttendanceForm.setTrainingStartTime("");
+			}
+
+			// 退勤時間の変換
+			Integer endHour = dailyAttendanceForm.getTrainingEndTimeHour();
+			Integer endMinute = dailyAttendanceForm.getTrainingEndTimeMinute();
+
+			if (endHour != null && endMinute != null) {
+				dailyAttendanceForm.setTrainingEndTime(
+						String.format("%02d:%02d", endHour, endMinute));
+			} else {
+				dailyAttendanceForm.setTrainingEndTime("");
+			}
+		}
 	}
 
 }

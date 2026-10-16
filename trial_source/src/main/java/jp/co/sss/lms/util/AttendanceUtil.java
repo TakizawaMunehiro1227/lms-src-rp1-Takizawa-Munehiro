@@ -147,4 +147,36 @@ public class AttendanceUtil {
 		return false;
 	}
 
+	/**
+	 * 時間の選択肢を取得
+	 *
+	 * @return 時間の選択肢
+	 */
+	public LinkedHashMap<Integer, String> setHourTime() {
+		LinkedHashMap<Integer, String> map = new LinkedHashMap<>();
+		map.put(null, "");
+
+		for (int i = 0; i < 24; i++) {
+			map.put(i, String.format("%02d", i));
+		}
+
+		return map;
+	}
+
+	/**
+	 * 分の選択肢を取得
+	 *
+	 * @return 分の選択肢
+	 */
+	public LinkedHashMap<Integer, String> setMinuteTime() {
+		LinkedHashMap<Integer, String> map = new LinkedHashMap<>();
+		map.put(null, "");
+
+		for (int i = 0; i < 60; i++) {
+			map.put(i, String.format("%02d", i));
+		}
+
+		return map;
+	}
+
 }
