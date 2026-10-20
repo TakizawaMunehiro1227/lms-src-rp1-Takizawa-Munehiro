@@ -13,6 +13,66 @@
 			// 更新確認ダイアログ
 			return window.confirm("更新します。よろしいですか？");
 		}
+
+
+		function setRegularTime(button) {
+			// 押されたボタンと同じ行を取得
+			const row = button.closest("tr");
+
+			// 出勤・退勤のプルダウンを取得
+			const startHour = row.querySelector(
+				'select[name$=".trainingStartTimeHour"]'
+			);
+			const startMinute = row.querySelector(
+				'select[name$=".trainingStartTimeMinute"]'
+			);
+			const endHour = row.querySelector(
+				'select[name$=".trainingEndTimeHour"]'
+			);
+			const endMinute = row.querySelector(
+				'select[name$=".trainingEndTimeMinute"]'
+			);
+
+			// プルダウンの選択肢から指定した時間を選択
+			const settings = [
+				[startHour, 9],
+				[startMinute, 0],
+				[endHour, 18],
+				[endMinute, 0]
+			];
+
+			const updates = [];
+
+			for (const [select, time] of settings) {
+				if (!select) {
+					alert("時間の入力欄が見つかりません。");
+					return;
+				}
+
+				const option = Array.from(select.options).find(
+					option => option.value !== "" &&
+						Number(option.value) === time
+				);
+
+				if (!option) {
+					alert("指定した時間の選択肢がありません。");
+					return;
+				}
+
+				updates.push([select, option.value]);
+			}
+
+			// 定時の値を設定
+			for (const [select, value] of updates) {
+				select.value = value;
+			}
+
+			console.log("出勤（時）:", startHour.value);
+			console.log("出勤（分）:", startMinute.value);
+			console.log("退勤（時）:", endHour.value);
+			console.log("退勤（分）:", endMinute.value);
+		}
+
 	</script>
 
 
@@ -71,11 +131,16 @@
 								<td class="w300">[[${dailyAttendanceForm.sectionName}]]</td>
 
 
+								<td style="min-width: 230px;">
+									<div style="display: flex; align-items: center; gap: 5px;">
 
-								<td class="w180">
-									<div style="display: flex;">
+										<!-- Task28 定時ボタン -->
+										<button type="button" class="btn btn-success btn-sm"
+											onclick="setRegularTime(this)">
+											定時
+										</button>
 										<select th:name="|attendanceList[${stat.index}].trainingStartTimeHour|"
-											class="form-control">
+											class="form-control" style="width: 65px; flex-shrink: 0;">
 											<option th:each="hour : ${attendanceForm.hourTimes}"
 												th:value="${hour.key == null ? '' : hour.key}"
 												th:text="${hour.value == '' ? '--' : hour.value}"
@@ -84,7 +149,7 @@
 										</select>
 										<span>:</span>
 										<select th:name="|attendanceList[${stat.index}].trainingStartTimeMinute|"
-											class="form-control">
+											class="form-control" style="width: 65px; flex-shrink: 0;">
 											<option th:each="minute : ${attendanceForm.minuteTimes}"
 												th:value="${minute.key == null ? '' : minute.key}"
 												th:text="${minute.value == '' ? '--' : minute.value}"
@@ -98,25 +163,33 @@
 
 
 
-								<td class="w180">
-									<div style="display: flex;">
+
+								<!-- 退勤時間 -->
+								<td style="min-width: 170px;">
+									<div style="display: flex; align-items: center; gap: 5px;">
+
+										<!-- 退勤時間（時） -->
 										<select th:name="|attendanceList[${stat.index}].trainingEndTimeHour|"
-											class="form-control">
+											class="form-control" style="width: 65px; flex-shrink: 0;">
 											<option th:each="hour : ${attendanceForm.hourTimes}"
 												th:value="${hour.key == null ? '' : hour.key}"
 												th:text="${hour.value == '' ? '--' : hour.value}"
 												th:selected="${hour.key == dailyAttendanceForm.trainingEndTimeHour}">
 											</option>
 										</select>
+
 										<span>:</span>
+
+										<!-- 退勤時間（分） -->
 										<select th:name="|attendanceList[${stat.index}].trainingEndTimeMinute|"
-											class="form-control">
+											class="form-control" style="width: 65px; flex-shrink: 0;">
 											<option th:each="minute : ${attendanceForm.minuteTimes}"
 												th:value="${minute.key == null ? '' : minute.key}"
 												th:text="${minute.value == '' ? '--' : minute.value}"
 												th:selected="${minute.key == dailyAttendanceForm.trainingEndTimeMinute}">
 											</option>
 										</select>
+
 									</div>
 								</td>
 
