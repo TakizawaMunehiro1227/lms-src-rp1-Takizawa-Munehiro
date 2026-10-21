@@ -64,7 +64,8 @@ public interface TStudentAttendanceMapper {
 	 * @return 更新結果
 	 */
 	Boolean update(TStudentAttendance tStudentAttendance);
-
+    
+	//瀧澤-Task25
 	/**
 	 * Task25 過去日の出席未入力件数を取得
 	 *

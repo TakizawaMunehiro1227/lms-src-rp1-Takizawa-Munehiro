@@ -95,7 +95,7 @@
 	</update>
 
 
-	<!-- Task25 過去日の出席未入力件数を取得 -->
+	<!-- 瀧澤-Task25 過去日の出席未入力件数を取得 -->
 	<select id="notEnterCount" resultType="java.lang.Integer">
 		SELECT COUNT(*)
 		FROM t_student_attendance

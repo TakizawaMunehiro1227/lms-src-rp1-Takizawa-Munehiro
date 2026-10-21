@@ -75,9 +75,10 @@ public class StudentAttendanceService {
 
 		return attendanceManagementDtoList;
 	}
-
+	
+  
 	/**
-	 * Task25 過去日の出席未入力チェック
+	 * @author 瀧澤志大-Task25 過去日の出席未入力チェック
 	 *
 	 * @return 未入力がある場合true、ない場合false
 	 * @throws ParseException 日付変換時の例外
