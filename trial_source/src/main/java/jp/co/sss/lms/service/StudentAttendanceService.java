@@ -88,6 +88,7 @@ public class StudentAttendanceService {
 		// 今日の日付を取得
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		Date date = new Date();
+		// 過去日の勤怠を判定するため、現在日時の時刻部分を0時0分0秒にする
 		Date trainingDate = df.parse(df.format(date));
 
 		// 過去日の出席未入力件数を取得
