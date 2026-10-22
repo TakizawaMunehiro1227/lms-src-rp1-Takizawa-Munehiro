@@ -32,4 +32,5 @@ public interface MCourseMapper {
 	 */
 	Integer getCourseCount(Integer courseId);
 
+
 }

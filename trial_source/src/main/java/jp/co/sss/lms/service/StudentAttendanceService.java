@@ -14,10 +14,13 @@ import org.springframework.validation.FieldError;
 
 import jp.co.sss.lms.dto.AttendanceManagementDto;
 import jp.co.sss.lms.dto.LoginUserDto;
+import jp.co.sss.lms.dto.UserDetailDto;
 import jp.co.sss.lms.entity.TStudentAttendance;
 import jp.co.sss.lms.enums.AttendanceStatusEnum;
 import jp.co.sss.lms.form.AttendanceForm;
+import jp.co.sss.lms.form.AttendanceSearchForm;
 import jp.co.sss.lms.form.DailyAttendanceForm;
+import jp.co.sss.lms.mapper.MLmsUserMapper;
 import jp.co.sss.lms.mapper.TStudentAttendanceMapper;
 import jp.co.sss.lms.util.AttendanceUtil;
 import jp.co.sss.lms.util.Constants;
@@ -47,6 +50,9 @@ public class StudentAttendanceService {
 	@Autowired
 	private TStudentAttendanceMapper tStudentAttendanceMapper;
 
+	@Autowired
+	private MLmsUserMapper mLmsUserMapper;
+
 	/**
 	 * 勤怠一覧情報取得
 	 * 
@@ -75,8 +81,7 @@ public class StudentAttendanceService {
 
 		return attendanceManagementDtoList;
 	}
-	
-  
+
 	/**
 	 * @author 瀧澤志大-Task25 過去日の出席未入力チェック
 	 *
@@ -527,6 +532,38 @@ public class StudentAttendanceService {
 				}
 			}
 		}
+
+	}
+
+	/**
+	 * Task.57 受講生情報一覧取得
+	 *
+	 * @param attendanceSearchForm 勤怠検索フォーム
+	 * @return ユーザー基本情報DTOリスト
+	 */
+	public List<UserDetailDto> getAttendanceDetailDtoList(
+			AttendanceSearchForm attendanceSearchForm) {
+
+		// ① Formから検索条件を取得
+		String courseName = attendanceSearchForm.getCourseName();
+		String companyName = attendanceSearchForm.getCompanyName();
+		String userName = attendanceSearchForm.getUserName();
+
+		// ② 講師権限の場合、LMSユーザーIDを設定
+		Integer teacherLmsUserId = null;
+
+		if (loginUserUtil.isTeacher()) {
+			teacherLmsUserId = loginUserDto.getLmsUserId();
+		}
+
+		// ③ 受講生情報一覧取得
+		return mLmsUserMapper.getUserDetailForSearch(
+				courseName,
+				companyName,
+				userName,
+				teacherLmsUserId,
+				Constants.CODE_VAL_ROLL_STUDENT,
+				Constants.DB_FLG_FALSE);
 	}
 
 }

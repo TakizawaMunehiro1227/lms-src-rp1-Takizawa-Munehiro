@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import jp.co.sss.lms.dto.AttendanceManagementDto;
 import jp.co.sss.lms.dto.LoginUserDto;
+import jp.co.sss.lms.dto.UserDetailDto;
 import jp.co.sss.lms.form.AttendanceForm;
+import jp.co.sss.lms.form.AttendanceSearchForm;
 import jp.co.sss.lms.service.StudentAttendanceService;
 import jp.co.sss.lms.util.Constants;
 
@@ -30,6 +32,8 @@ public class AttendanceController {
 	private StudentAttendanceService studentAttendanceService;
 	@Autowired
 	private LoginUserDto loginUserDto;
+	
+	
 
 	/**
 	 * 勤怠管理画面 初期表示
@@ -184,5 +188,30 @@ public class AttendanceController {
 
 	    return "attendance/detail";
 	}
+	
+	  /**
+     * Task.57 勤怠情報確認（受講生一覧）
+     * 初期表示・検索処理
+     *
+     * @param attendanceSearchForm 勤怠検索フォーム
+     * @param model モデル
+     * @return 勤怠情報確認画面
+     */
+    @RequestMapping("/list")
+    public String list( @ModelAttribute("attendanceSearchForm")AttendanceSearchForm attendanceSearchForm,Model model) {
+
+        // TODO 管理者・講師のアクセス権限チェック
+
+        // ① 受講生情報一覧取得
+        List<UserDetailDto> userDetailDtoList =studentAttendanceService.getAttendanceDetailDtoList(attendanceSearchForm);
+
+        // ② 受講生情報一覧をModelに設定
+        model.addAttribute("userDetailDtoList", userDetailDtoList);
+
+        // ③ 勤怠情報確認（受講生一覧）画面を表示
+        return "attendance/list";
+    }
+	
+
 
 }

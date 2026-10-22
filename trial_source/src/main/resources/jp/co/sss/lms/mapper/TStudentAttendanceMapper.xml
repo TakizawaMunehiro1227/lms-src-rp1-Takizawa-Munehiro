@@ -101,8 +101,7 @@
 		FROM t_student_attendance
 		WHERE lms_user_id = #{lmsUserId}
 		AND delete_flg = #{deleteFlg}
-		AND training_date <![CDATA[<]]>
-		#{trainingDate}
+		AND training_date &lt; #{trainingDate}
 		AND status != 1
 		AND (
 		training_start_time = ''

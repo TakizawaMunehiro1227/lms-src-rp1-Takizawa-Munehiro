@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+<head>
+    <meta charset="UTF-8">
+    <title>勤怠情報確認（受講生一覧）｜LMS</title>
+</head>
+<body>
+
+    <!-- 共通ヘッダーとフッターは /common/layout 側で表示される -->
+    <h2>勤怠情報確認 <small>（受講生一覧）</small></h2>
+
+    <!-- 検索エリア -->
+    <div class="well bs-component">
+        <form th:action="@{/attendance/list}"
+              th:object="${attendanceSearchForm}"
+              method="get" class="form-horizontal">
+            <fieldset>
+                <legend>検索</legend>
+
+                <div class="form-group">
+                    <label for="courseName" class="col-lg-2 control-label">コース名</label>
+                    <div class="col-lg-10">
+                        <input type="text" id="courseName" th:field="*{courseName}"
+                               class="form-control" list="courseCandidates">
+                        <!-- 候補用DTO一覧がModelにある場合だけ候補が表示される -->
+                        <datalist id="courseCandidates">
+                            <option th:each="course : ${courseDtoList}"
+                                    th:value="${course.courseName}"></option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="placeName" class="col-lg-2 control-label">会場名</label>
+                    <div class="col-lg-10">
+                        <!-- 会場名は表示専用。値の取得元は別途実装する -->
+                        <input type="text" id="placeName" class="form-control"
+                               th:value="${placeName}" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="companyName" class="col-lg-2 control-label">企業名</label>
+                    <div class="col-lg-10">
+                        <input type="text" id="companyName" th:field="*{companyName}"
+                               class="form-control" list="companyCandidates">
+                        <datalist id="companyCandidates">
+                            <option th:each="company : ${companyDtoList}"
+                                    th:value="${company.companyName}"></option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="userName" class="col-lg-2 control-label">ユーザー名</label>
+                    <div class="col-lg-10">
+                        <input type="text" id="userName" th:field="*{userName}"
+                               class="form-control">
+                    </div>
+                </div>
+
+                <!-- 別権限等で必要と確定した場合だけ表示 -->
+                <div class="form-group" th:if="${showPastFlg == true}">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <label class="checkbox-inline" for="pastFlg">
+                            <input type="checkbox" id="pastFlg" value="1"
+                                   th:field="*{pastFlg}">
+                            <span th:text="${pastTimeLabel ?: '過去の受講生を含めて検索'}">過去の受講生を含めて検索</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                        <button type="submit" class="btn btn-primary">検索</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+    <!-- 受講生一覧 -->
+    <div class="row">
+        <div class="bs-component col-sm-12">
+            <div class="table-responsive">
+               <table id="studentTable" class="table table-hover sortabletable">
+                    <thead>
+                        <tr>
+                            <th>ユーザーID</th>
+                            <th>ユーザー名</th>
+                            <th>コース名</th>
+                            <th>企業名</th>
+                            <th>会場</th>
+                            <th>勤怠</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="student : ${userDetailDtoList}">
+                            <td th:text="${student.userId}">24552</td>
+                            <td th:text="${student.userName}">テスト受講生</td>
+                            <td th:text="${student.courseName}">デモコース</td>
+                            <td th:text="${student.companyName}">デモ企業</td>
+                            <td th:text="${student.placeName}">デモ会場</td>
+                            <td>
+                                <!-- 勤怠確認の遷移先は未確定のため一時的に無効化 -->
+                                <button type="button" class="btn btn-default btn-sm"
+                                        disabled>勤怠確認</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+ 
+</body>
+</html>
