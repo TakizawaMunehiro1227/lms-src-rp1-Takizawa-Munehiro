@@ -54,7 +54,7 @@ public class AttendanceController {
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
 		// 瀧澤-Task25 過去日の出席未入力チェック
-		boolean notEnterFlg = studentAttendanceService.notEnterCheck();
+		Boolean notEnterFlg = studentAttendanceService.notEnterCheck();
 		model.addAttribute("notEnterFlg", notEnterFlg);
 		return "attendance/detail";
 	}
@@ -190,27 +190,31 @@ public class AttendanceController {
 	}
 	
 	  /**
-     * Task.57 勤怠情報確認（受講生一覧）
-     * 初期表示・検索処理
-     *
+     * 初期表示・検索処理  
+     *@author 瀧澤：Task.57 勤怠情報確認（受講生一覧）
      * @param attendanceSearchForm 勤怠検索フォーム
      * @param model モデル
      * @return 勤怠情報確認画面
      */
-    @RequestMapping("/list")
-    public String list( @ModelAttribute("attendanceSearchForm")AttendanceSearchForm attendanceSearchForm,Model model) {
+	
+	@RequestMapping("/list")
+	public String list(@ModelAttribute("attendanceSearchForm")AttendanceSearchForm attendanceSearchForm,Model model) {
 
-        // TODO 管理者・講師のアクセス権限チェック
+	    // ① 受講生情報一覧取得
+	    List<UserDetailDto> userDetailDtoList =studentAttendanceService.getAttendanceDetailDtoList(attendanceSearchForm);
 
-        // ① 受講生情報一覧取得
-        List<UserDetailDto> userDetailDtoList =studentAttendanceService.getAttendanceDetailDtoList(attendanceSearchForm);
+	    // ② ログインユーザーの担当会場名を取得
+	    String placeName =studentAttendanceService.getLoginUserPlaceName();
 
-        // ② 受講生情報一覧をModelに設定
-        model.addAttribute("userDetailDtoList", userDetailDtoList);
+	    // ③ 受講生情報一覧をModelに設定
+	    model.addAttribute("userDetailDtoList", userDetailDtoList);
 
-        // ③ 勤怠情報確認（受講生一覧）画面を表示
-        return "attendance/list";
-    }
+	    // ④ 会場名をModelに設定
+	    model.addAttribute("placeName", placeName);
+
+	    // ⑤ 勤怠情報確認（受講生一覧）画面を表示
+	    return "attendance/list";
+	}
 	
 
 

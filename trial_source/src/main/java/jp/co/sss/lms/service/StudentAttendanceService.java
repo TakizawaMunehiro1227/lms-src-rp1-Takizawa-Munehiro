@@ -88,7 +88,7 @@ public class StudentAttendanceService {
 	 * @return 未入力がある場合true、ない場合false
 	 * @throws ParseException 日付変換時の例外
 	 */
-	public boolean notEnterCheck() throws ParseException {
+	public Boolean notEnterCheck() throws ParseException {
 
 		// 今日の日付を取得
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -564,6 +564,34 @@ public class StudentAttendanceService {
 				teacherLmsUserId,
 				Constants.CODE_VAL_ROLL_STUDENT,
 				Constants.DB_FLG_FALSE);
+	}
+	
+	/**
+	 * ログインユーザーの担当会場名取得
+	 *
+	 * @return 担当会場名
+	 */
+	public String getLoginUserPlaceName() {
+
+	    // 管理者の場合は全会場と表示
+	    if (!loginUserUtil.isTeacher()) {
+	        return "全会場";
+	    }
+
+	    // ① ログイン講師のLMSユーザーID取得
+	    Integer lmsUserId = loginUserDto.getLmsUserId();
+
+	    // ② 担当会場名をDBから取得
+	    List<String> placeNames =
+	            mLmsUserMapper.getPlaceNamesByLmsUserId(lmsUserId);
+
+	    // ③ 会場が登録されていない場合
+	    if (placeNames.isEmpty()) {
+	        return "担当会場未設定";
+	    }
+
+	    // ④ 会場名を返却
+	    return String.join("、", placeNames);
 	}
 
 }

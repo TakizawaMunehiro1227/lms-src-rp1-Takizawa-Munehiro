@@ -37,5 +37,8 @@ public interface MLmsUserMapper {
 			@Param("teacherLmsUserId") Integer teacherLmsUserId,
 			@Param("role") String role,
 			@Param("deleteFlg") Short deleteFlg);
+	
+	List<String> getPlaceNamesByLmsUserId(
+	        @Param("lmsUserId") Integer lmsUserId);
 
 }
