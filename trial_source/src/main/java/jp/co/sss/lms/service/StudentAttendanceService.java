@@ -14,11 +14,13 @@ import org.springframework.validation.FieldError;
 
 import jp.co.sss.lms.dto.AttendanceManagementDto;
 import jp.co.sss.lms.dto.LoginUserDto;
+import jp.co.sss.lms.dto.PlaceDto;
 import jp.co.sss.lms.dto.UserDetailDto;
 import jp.co.sss.lms.entity.TStudentAttendance;
 import jp.co.sss.lms.enums.AttendanceStatusEnum;
 import jp.co.sss.lms.form.AttendanceForm;
 import jp.co.sss.lms.form.AttendanceSearchForm;
+import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.form.DailyAttendanceForm;
 import jp.co.sss.lms.mapper.MLmsUserMapper;
 import jp.co.sss.lms.mapper.TStudentAttendanceMapper;
@@ -52,6 +54,9 @@ public class StudentAttendanceService {
 
 	@Autowired
 	private MLmsUserMapper mLmsUserMapper;
+	
+	@Autowired
+	private PlaceService placeService;
 
 	/**
 	 * 勤怠一覧情報取得
@@ -592,6 +597,45 @@ public class StudentAttendanceService {
 
 	    // ④ 会場名を返却
 	    return String.join("、", placeNames);
+	}
+	
+	/**
+	 * Task.58 勤怠一括登録フォームの初期設定
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 */
+	public void setBulkRegistForm(BulkRegistForm bulkRegistForm) {
+
+	    // ① ログイン情報から会場IDを取得
+	    Integer placeId = loginUserDto.getPlaceId();
+
+	    // ② フォームに会場IDを設定
+	    bulkRegistForm.setPlaceId(placeId);
+
+	    // ③ 会場情報を取得
+	    PlaceDto placeDto = placeService.findByPlaceId(placeId);
+
+	    // ④ 会場情報が取得できない場合
+	    if (placeDto == null || placeDto.getPlaceNote() == null) {
+	        bulkRegistForm.setPlaceName(null);
+	        return;
+	    }
+
+	    // ⑤ 備考から教室名を取得
+	    // 備考の形式：タイトル$教室名$備考
+	    String[] placeNotes = placeDto.getPlaceNote().split("\\$", -1);
+
+	    // ⑥ 教室名が存在しない場合
+	    if (placeNotes.length < 2 || placeNotes[1].isEmpty()) {
+	        bulkRegistForm.setPlaceName(null);
+	        return;
+	    }
+
+	    // ⑦ 会場名（教室名）の形式で設定
+	    String placeName = placeDto.getPlaceName()
+	            + "（" + placeNotes[1] + "）";
+
+	    bulkRegistForm.setPlaceName(placeName);
 	}
 
 }

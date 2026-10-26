@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>勤怠一括登録｜LMS</title>
+</head>
+
+<body>
+
+    <!-- Task.58 勤怠一括登録画面 -->
+    <!-- 共通ヘッダーとフッターは /common/layout 側で表示される -->
+
+    <h2>勤怠一括登録</h2>
+
+    <!-- 検索エリア -->
+    <div class="well bs-component">
+
+        <form th:action="@{/attendance/bulkRegist/search}"
+              th:object="${bulkRegistForm}"
+              method="post"
+              class="form-horizontal">
+
+            <fieldset>
+                <legend>検索</legend>
+
+                <!-- 検索期間 -->
+                <div class="form-group">
+                    <label for="searchPeriodFrom"
+                           class="col-lg-2 control-label">
+                        期間
+                    </label>
+
+                    <div class="col-lg-10 form-inline">
+
+                        <input type="text"
+                               id="searchPeriodFrom"
+                               th:field="*{searchPeriodFrom}"
+                               class="form-control datepickerFrom"
+                               placeholder="yyyy-MM-dd">
+
+                        ～
+
+                        <input type="text"
+                               id="searchPeriodTo"
+                               th:field="*{searchPeriodTo}"
+                               class="form-control datepickerTo"
+                               placeholder="yyyy-MM-dd">
+
+                    </div>
+                </div>
+
+                <!-- 会場名 -->
+                <div class="form-group">
+                    <label for="placeId"
+                           class="col-lg-2 control-label">
+                        会場名
+                    </label>
+
+                    <div class="col-lg-10">
+
+                        <select id="placeId"
+                                th:field="*{placeId}"
+                                class="form-control">
+
+                            <option value="">選択してください</option>
+
+                            <option th:if="*{placeId != null}"
+                                    th:value="*{placeId}"
+                                    th:text="*{placeName}">
+                            </option>
+
+                        </select>
+
+                    </div>
+                </div>
+
+                <!-- 検索ボタン -->
+                <div class="form-group">
+
+                    <div class="col-lg-10 col-lg-offset-2">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            検索
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </fieldset>
+
+        </form>
+
+    </div>
+
+    <!-- Task.58 勤怠一覧エリア -->
+    <!-- 検索処理の実装後に追加する -->
+
+</body>
+</html>

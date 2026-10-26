@@ -16,6 +16,7 @@ import jp.co.sss.lms.dto.LoginUserDto;
 import jp.co.sss.lms.dto.UserDetailDto;
 import jp.co.sss.lms.form.AttendanceForm;
 import jp.co.sss.lms.form.AttendanceSearchForm;
+import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.service.StudentAttendanceService;
 import jp.co.sss.lms.util.Constants;
 
@@ -214,6 +215,28 @@ public class AttendanceController {
 
 	    // ⑤ 勤怠情報確認（受講生一覧）画面を表示
 	    return "attendance/list";
+	}
+	
+	/**
+	 * Task.58 勤怠一括登録画面 初期表示
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @param model モデル
+	 * @return 勤怠一括登録画面
+	 */
+	@RequestMapping(path = "/bulkRegist", method = RequestMethod.GET)
+	public String bulkRegist(
+	        @ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
+	        Model model) {
+
+	    // ① 勤怠一括登録フォームの初期設定
+	    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+
+	    // ② フォームをModelに設定
+	    model.addAttribute("bulkRegistForm", bulkRegistForm);
+
+	    // ③ 勤怠一括登録画面を表示
+	    return "attendance/bulkRegist";
 	}
 	
 

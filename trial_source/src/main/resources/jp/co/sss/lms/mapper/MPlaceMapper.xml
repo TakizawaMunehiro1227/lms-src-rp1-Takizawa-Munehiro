@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+    "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jp.co.sss.lms.mapper.MPlaceMapper">
+
+    <resultMap id="placeDtoResultMap"
+               type="jp.co.sss.lms.dto.PlaceDto">
+
+        <id column="place_id" property="placeId"/>
+        <result column="place_name" property="placeName"/>
+        <result column="place_note" property="placeNote"/>
+
+    </resultMap>
+
+    <!-- Task.58 会場情報取得 -->
+    <select id="findByPlaceId"
+            resultMap="placeDtoResultMap">
+
+        SELECT
+            place_id,
+            place_name,
+            place_note
+        FROM
+            m_place
+        WHERE
+            place_id = #{placeId}
+            AND hidden_flg = #{hiddenFlg}
+            AND delete_flg = #{deleteFlg}
+
+    </select>
+
+</mapper>
