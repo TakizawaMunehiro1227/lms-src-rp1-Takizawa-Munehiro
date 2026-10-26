@@ -30,5 +30,115 @@
             AND delete_flg = #{deleteFlg}
 
     </select>
+    
+    <!-- Task.58 ユーザー勤怠情報DTOのマッピング -->
+<resultMap id="userAttendanceDtoResultMap"
+           type="jp.co.sss.lms.dto.UserAttendanceDto">
+
+    <result column="placeId" property="placeId"/>
+    <result column="lmsUserId" property="lmsUserId"/>
+    <result column="userName" property="userName"/>
+    <result column="courseId" property="courseId"/>
+    <result column="courseName" property="courseName"/>
+    <result column="companyAttendanceId" property="companyAttendanceId"/>
+    <result column="studentAttendanceId" property="studentAttendanceId"/>
+    <result column="trainingDate" property="trainingDate"/>
+    <result column="trainingStartTime" property="trainingStartTime"/>
+    <result column="trainingEndTime" property="trainingEndTime"/>
+    <result column="blankTime" property="blankTime"/>
+    <result column="status" property="status"/>
+    <result column="note" property="note"/>
+
+</resultMap>
+
+<!-- Task.58 ユーザー勤怠情報DTO取得 -->
+<select id="getUserAttendanceDto"
+        resultMap="userAttendanceDtoResultMap">
+
+    SELECT
+        p.place_id AS placeId,
+        lu.lms_user_id AS lmsUserId,
+        u.user_name AS userName,
+        c.course_id AS courseId,
+        c.course_name AS courseName,
+        ca.company_attendance_id AS companyAttendanceId,
+        sa.student_attendance_id AS studentAttendanceId,
+        s.date AS trainingDate,
+        sa.training_start_time AS trainingStartTime,
+        sa.training_end_time AS trainingEndTime,
+        sa.blank_time AS blankTime,
+        sa.status AS status,
+        sa.note AS note
+
+    FROM m_place p
+
+    -- ユーザー・会場紐付け
+    INNER JOIN t_user_place up
+        ON p.place_id = up.place_id
+        AND up.delete_flg = #{deleteFlg}
+
+    -- LMSユーザーマスタ
+    INNER JOIN m_lms_user lu
+        ON up.lms_user_id = lu.lms_user_id
+        AND lu.delete_flg = #{deleteFlg}
+
+    -- ユーザーマスタ
+    INNER JOIN m_user u
+        ON lu.user_id = u.user_id
+        AND u.delete_flg = #{deleteFlg}
+
+    -- コース・ユーザー紐付け
+    INNER JOIN t_course_user cu
+        ON lu.lms_user_id = cu.lms_user_id
+        AND cu.delete_flg = #{deleteFlg}
+
+    -- コースマスタ
+    INNER JOIN m_course c
+        ON cu.course_id = c.course_id
+        AND c.delete_flg = #{deleteFlg}
+
+    -- セクションマスタ
+    INNER JOIN m_section s
+        ON c.course_id = s.course_id
+        AND CAST(s.date AS DATE)
+            BETWEEN #{from} AND #{to}
+        AND s.delete_flg = #{deleteFlg}
+
+    -- 受講生入力勤怠情報
+    LEFT OUTER JOIN t_student_attendance sa
+        ON lu.lms_user_id = sa.lms_user_id
+        AND CAST(s.date AS DATE)
+            = CAST(sa.training_date AS DATE)
+        AND sa.delete_flg = #{deleteFlg}
+
+    -- 企業入力勤怠情報
+    LEFT OUTER JOIN t_company_attendance ca
+        ON lu.lms_user_id = ca.lms_user_id
+        AND CAST(s.date AS DATE)
+            = CAST(ca.training_date AS DATE)
+        AND ca.delete_flg = #{deleteFlg}
+
+    WHERE
+        p.place_id = #{placeId}
+        AND p.delete_flg = #{deleteFlg}
+        AND lu.role = '0001'
+
+        -- 企業入力勤怠情報の未登録・未確定条件
+        AND (
+            ca.training_date IS NULL
+            OR (
+                ca.training_date IS NOT NULL
+                AND ca.training_start_time = ''
+                AND ca.training_end_time = ''
+                AND ca.status &lt;&gt; 1
+            )
+        )
+
+    ORDER BY
+        s.date ASC,
+        lu.lms_user_id ASC
+
+</select>
+
 
 </mapper>

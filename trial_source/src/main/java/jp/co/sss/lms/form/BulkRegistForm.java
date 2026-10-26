@@ -1,5 +1,8 @@
 package jp.co.sss.lms.form;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -21,5 +24,9 @@ public class BulkRegistForm {
 
     /** 検索期間（終了日） */
     private String searchPeriodTo;
+    /**
+     * Task.58 日別勤怠情報フォームリスト
+     */
+    private List<DailyAttendanceForm> dailyAttendanceFormList= new ArrayList<>();
 
 }

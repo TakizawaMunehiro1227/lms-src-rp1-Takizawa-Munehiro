@@ -1,103 +1,98 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
 
 <head>
-    <meta charset="UTF-8">
-    <title>勤怠一括登録｜LMS</title>
+	<meta charset="UTF-8">
+	<title>勤怠一括登録｜LMS</title>
 </head>
 
 <body>
 
-    <!-- Task.58 勤怠一括登録画面 -->
-    <!-- 共通ヘッダーとフッターは /common/layout 側で表示される -->
+	<!-- Task.58 勤怠一括登録画面 -->
+	<!-- 共通ヘッダーとフッターは /common/layout 側で表示される -->
 
-    <h2>勤怠一括登録</h2>
+	<h2>勤怠一括登録</h2>
 
-    <!-- 検索エリア -->
-    <div class="well bs-component">
+	<!-- 検索エリア -->
+	<div class="well bs-component">
 
-        <form th:action="@{/attendance/bulkRegist/search}"
-              th:object="${bulkRegistForm}"
-              method="post"
-              class="form-horizontal">
+		<form th:action="@{/attendance/bulkRegist/search}" th:object="${bulkRegistForm}" method="post"
+			class="form-horizontal">
 
-            <fieldset>
-                <legend>検索</legend>
+			<!-- Task.58 検索時の入力エラー表示 -->
+			<div class="alert alert-danger" th:if="${#fields.hasAnyErrors()}">
 
-                <!-- 検索期間 -->
-                <div class="form-group">
-                    <label for="searchPeriodFrom"
-                           class="col-lg-2 control-label">
-                        期間
-                    </label>
+				<ul>
+					<li th:each="error : ${#fields.allErrors()}" th:text="${error}">
+					</li>
+				</ul>
 
-                    <div class="col-lg-10 form-inline">
+			</div>
 
-                        <input type="text"
-                               id="searchPeriodFrom"
-                               th:field="*{searchPeriodFrom}"
-                               class="form-control datepickerFrom"
-                               placeholder="yyyy-MM-dd">
+			<fieldset>
+				<legend>検索</legend>
 
-                        ～
+				<!-- 検索期間 -->
+				<div class="form-group">
+					<label for="searchPeriodFrom" class="col-lg-2 control-label">
+						期間
+					</label>
 
-                        <input type="text"
-                               id="searchPeriodTo"
-                               th:field="*{searchPeriodTo}"
-                               class="form-control datepickerTo"
-                               placeholder="yyyy-MM-dd">
+					<div class="col-lg-10 form-inline">
 
-                    </div>
-                </div>
+						<input type="text" id="searchPeriodFrom" th:field="*{searchPeriodFrom}"
+							class="form-control datepickerFrom" placeholder="yyyy-MM-dd">
 
-                <!-- 会場名 -->
-                <div class="form-group">
-                    <label for="placeId"
-                           class="col-lg-2 control-label">
-                        会場名
-                    </label>
+						～
 
-                    <div class="col-lg-10">
+						<input type="text" id="searchPeriodTo" th:field="*{searchPeriodTo}"
+							class="form-control datepickerTo" placeholder="yyyy-MM-dd">
 
-                        <select id="placeId"
-                                th:field="*{placeId}"
-                                class="form-control">
+					</div>
+				</div>
 
-                            <option value="">選択してください</option>
+				<!-- 会場名 -->
+				<div class="form-group">
+					<label for="placeId" class="col-lg-2 control-label">
+						会場名
+					</label>
 
-                            <option th:if="*{placeId != null}"
-                                    th:value="*{placeId}"
-                                    th:text="*{placeName}">
-                            </option>
+					<div class="col-lg-10">
 
-                        </select>
+						<select id="placeId" th:field="*{placeId}" class="form-control">
 
-                    </div>
-                </div>
+							<option value="">選択してください</option>
 
-                <!-- 検索ボタン -->
-                <div class="form-group">
+							<option th:if="*{placeId != null}" th:value="*{placeId}" th:text="*{placeName}">
+							</option>
 
-                    <div class="col-lg-10 col-lg-offset-2">
+						</select>
 
-                        <button type="submit"
-                                class="btn btn-primary">
-                            検索
-                        </button>
+					</div>
+				</div>
 
-                    </div>
+				<!-- 検索ボタン -->
+				<div class="form-group">
 
-                </div>
+					<div class="col-lg-10 col-lg-offset-2">
 
-            </fieldset>
+						<button type="submit" class="btn btn-primary">
+							検索
+						</button>
 
-        </form>
+					</div>
 
-    </div>
+				</div>
 
-    <!-- Task.58 勤怠一覧エリア -->
-    <!-- 検索処理の実装後に追加する -->
+			</fieldset>
+
+		</form>
+
+	</div>
+
+	<!-- Task.58 勤怠一覧エリア -->
+	<!-- 検索処理の実装後に追加する -->
 
 </body>
+
 </html>

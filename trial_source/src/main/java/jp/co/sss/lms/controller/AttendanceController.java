@@ -239,6 +239,41 @@ public class AttendanceController {
 	    return "attendance/bulkRegist";
 	}
 	
+	/**
+	 * Task.58 勤怠一括登録画面
+	 * 検索ボタン押下処理
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @param result 入力チェック結果
+	 * @param model モデル
+	 * @return 勤怠一括登録画面
+	 * @throws ParseException 日付変換時の例外
+	 */
+	@RequestMapping(path = "/bulkRegist/search",method = RequestMethod.POST)
+	public String bulkRegistSearch( @ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
+	        BindingResult result,Model model) throws ParseException {
+
+	    // ① Task.58 検索時の入力チェック
+	    studentAttendanceService.searchInputCheck(
+	            bulkRegistForm, result);
+
+	    // ② 会場情報をフォームに再設定
+	    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+
+	    // ③ 入力エラーがある場合
+	    if (result.hasErrors()) {
+
+	        // 勤怠一括登録画面へ戻る
+	        return "attendance/bulkRegist";
+	    }
+
+	    // ④ Task.58 ユーザー勤怠情報の取得
+	    // ※ 次のSTEPで実装する
+
+	    // ⑤ 勤怠一括登録画面を表示
+	    return "attendance/bulkRegist";
+	}
+	
 
 
 }

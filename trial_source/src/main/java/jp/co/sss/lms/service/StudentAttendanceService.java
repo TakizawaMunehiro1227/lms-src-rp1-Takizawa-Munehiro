@@ -2,6 +2,11 @@ package jp.co.sss.lms.service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,6 +28,7 @@ import jp.co.sss.lms.form.AttendanceSearchForm;
 import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.form.DailyAttendanceForm;
 import jp.co.sss.lms.mapper.MLmsUserMapper;
+import jp.co.sss.lms.mapper.MPlaceMapper;
 import jp.co.sss.lms.mapper.TStudentAttendanceMapper;
 import jp.co.sss.lms.util.AttendanceUtil;
 import jp.co.sss.lms.util.Constants;
@@ -54,9 +60,15 @@ public class StudentAttendanceService {
 
 	@Autowired
 	private MLmsUserMapper mLmsUserMapper;
-	
+
 	@Autowired
 	private PlaceService placeService;
+	
+	/**
+	 * Task.58 会場マスタMapper
+	 */
+	@Autowired
+	private MPlaceMapper mPlaceMapper;
 
 	/**
 	 * 勤怠一覧情報取得
@@ -570,7 +582,7 @@ public class StudentAttendanceService {
 				Constants.CODE_VAL_ROLL_STUDENT,
 				Constants.DB_FLG_FALSE);
 	}
-	
+
 	/**
 	 * ログインユーザーの担当会場名取得
 	 *
@@ -578,27 +590,26 @@ public class StudentAttendanceService {
 	 */
 	public String getLoginUserPlaceName() {
 
-	    // 管理者の場合は全会場と表示
-	    if (!loginUserUtil.isTeacher()) {
-	        return "全会場";
-	    }
+		// 管理者の場合は全会場と表示
+		if (!loginUserUtil.isTeacher()) {
+			return "全会場";
+		}
 
-	    // ① ログイン講師のLMSユーザーID取得
-	    Integer lmsUserId = loginUserDto.getLmsUserId();
+		// ① ログイン講師のLMSユーザーID取得
+		Integer lmsUserId = loginUserDto.getLmsUserId();
 
-	    // ② 担当会場名をDBから取得
-	    List<String> placeNames =
-	            mLmsUserMapper.getPlaceNamesByLmsUserId(lmsUserId);
+		// ② 担当会場名をDBから取得
+		List<String> placeNames = mLmsUserMapper.getPlaceNamesByLmsUserId(lmsUserId);
 
-	    // ③ 会場が登録されていない場合
-	    if (placeNames.isEmpty()) {
-	        return "担当会場未設定";
-	    }
+		// ③ 会場が登録されていない場合
+		if (placeNames.isEmpty()) {
+			return "担当会場未設定";
+		}
 
-	    // ④ 会場名を返却
-	    return String.join("、", placeNames);
+		// ④ 会場名を返却
+		return String.join("、", placeNames);
 	}
-	
+
 	/**
 	 * Task.58 勤怠一括登録フォームの初期設定
 	 *
@@ -606,36 +617,169 @@ public class StudentAttendanceService {
 	 */
 	public void setBulkRegistForm(BulkRegistForm bulkRegistForm) {
 
-	    // ① ログイン情報から会場IDを取得
-	    Integer placeId = loginUserDto.getPlaceId();
+		// ① ログイン情報から会場IDを取得
+		Integer placeId = loginUserDto.getPlaceId();
 
-	    // ② フォームに会場IDを設定
-	    bulkRegistForm.setPlaceId(placeId);
+		// ② フォームに会場IDを設定
+		bulkRegistForm.setPlaceId(placeId);
 
-	    // ③ 会場情報を取得
-	    PlaceDto placeDto = placeService.findByPlaceId(placeId);
+		// ③ 会場情報を取得
+		PlaceDto placeDto = placeService.findByPlaceId(placeId);
 
-	    // ④ 会場情報が取得できない場合
-	    if (placeDto == null || placeDto.getPlaceNote() == null) {
-	        bulkRegistForm.setPlaceName(null);
-	        return;
-	    }
+		// ④ 会場情報が取得できない場合
+		if (placeDto == null || placeDto.getPlaceNote() == null) {
+			bulkRegistForm.setPlaceName(null);
+			return;
+		}
 
-	    // ⑤ 備考から教室名を取得
-	    // 備考の形式：タイトル$教室名$備考
-	    String[] placeNotes = placeDto.getPlaceNote().split("\\$", -1);
+		// ⑤ 備考から教室名を取得
+		String[] placeNotes = placeDto.getPlaceNote().split("\\$", -1);
 
-	    // ⑥ 教室名が存在しない場合
-	    if (placeNotes.length < 2 || placeNotes[1].isEmpty()) {
-	        bulkRegistForm.setPlaceName(null);
-	        return;
-	    }
+		// ⑥ 教室名が存在しない場合
+		if (placeNotes.length < 2 || placeNotes[1].isEmpty()) {
+			bulkRegistForm.setPlaceName(null);
+			return;
+		}
 
-	    // ⑦ 会場名（教室名）の形式で設定
-	    String placeName = placeDto.getPlaceName()
-	            + "（" + placeNotes[1] + "）";
+		// ⑦ 会場名（教室名）の形式で設定
+		String placeName = placeDto.getPlaceName()
+				+ "（" + placeNotes[1] + "）";
 
-	    bulkRegistForm.setPlaceName(placeName);
+		bulkRegistForm.setPlaceName(placeName);
 	}
+
+	/**
+	 * Task.58 勤怠一括登録画面
+	 * 検索時入力チェック
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @param result 入力チェック結果
+	 * @throws ParseException 日付変換時の例外
+	 */
+	public void searchInputCheck(BulkRegistForm bulkRegistForm,BindingResult result) throws ParseException {
+
+		// ① すでに入力エラーがある場合は終了
+		if (result.hasErrors()) {
+			return;
+		}
+
+		// ② 検索期間を取得
+		String fromValue = bulkRegistForm.getSearchPeriodFrom();
+		String toValue = bulkRegistForm.getSearchPeriodTo();
+
+		// ③ 検索開始日の必須チェック
+		if (fromValue == null || fromValue.isBlank()) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodFrom",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_REQUIRED,
+							new String[] { "期間（From）" })));
+
+			return;
+		}
+
+		// ④ 検索終了日の必須チェック
+		if (toValue == null || toValue.isBlank()) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodTo",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_REQUIRED,
+							new String[] { "期間（To）" })));
+
+			return;
+		}
+
+		// ⑤ 日付形式チェック用フォーマッター
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd")
+				.withResolverStyle(ResolverStyle.STRICT);
+
+		LocalDate from;
+		LocalDate to;
+
+		// ⑥ 開始日の日付形式チェック
+		try {
+			from = LocalDate.parse(fromValue, formatter);
+
+		} catch (DateTimeParseException e) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodFrom",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_DATE,
+							new String[] { "期間（From）" })));
+
+			return;
+		}
+
+		// ⑦ 終了日の日付形式チェック
+		try {
+			to = LocalDate.parse(toValue, formatter);
+
+		} catch (DateTimeParseException e) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodTo",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_DATE,
+							new String[] { "期間（To）" })));
+
+			return;
+		}
+
+		// ⑧ 終了日がシステム日付より未来の場合
+		if (to.isAfter(LocalDate.now())) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodTo",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_SEARCHTORANGEERROR,
+							new String[] { "期間（To）" })));
+
+			return;
+		}
+
+		// ⑨ 開始日が終了日より後の場合
+		if (from.isAfter(to)) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodTo",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_SEARCHPERIODCOMPAREERROR,
+							new String[] {
+									"期間（To）",
+									"期間（From）"
+							})));
+
+			return;
+		}
+
+		// ⑩ 検索期間が30日を超えている場合
+		long days = ChronoUnit.DAYS.between(from, to) + 1;
+
+		if (days > 30) {
+
+			result.addError(new FieldError(
+					result.getObjectName(),
+					"searchPeriodTo",
+					messageUtil.getMessage(
+							Constants.VALID_KEY_SEARCHSETTINGOVER,
+							new String[] {
+									"検索期間",
+									"30日"
+							})));
+
+			return;
+		}
+	}
+	
+	
 
 }
