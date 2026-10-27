@@ -248,6 +248,7 @@ public class LoginSessionFilter implements Filter {
 		teacherAcessList.add("/lms/attendance/list");
 		teacherAcessList.add("/lms/attendance/detail");
 		teacherAcessList.add("/lms/attendance/bulkRegist");
+		teacherAcessList.add("/lms/attendance/bulkRegist/search");
 		teacherAcessList.add("/lms/attendance/update");
 		teacherAcessList.add("/lms/attendance/updateAdmin");
 		teacherAcessList.add("/lms/evReport/score");

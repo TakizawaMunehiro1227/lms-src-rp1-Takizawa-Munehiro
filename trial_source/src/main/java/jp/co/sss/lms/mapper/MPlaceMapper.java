@@ -1,6 +1,6 @@
 package jp.co.sss.lms.mapper;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -11,8 +11,8 @@ import jp.co.sss.lms.dto.UserAttendanceDto;
 
 /**
  * 会場マスタMapper
- *
- * Task.58 勤怠一括登録画面
+ *@author 瀧澤：Task.58 勤怠一括登録画面
+ * 
  */
 @Mapper
 public interface MPlaceMapper {

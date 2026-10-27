@@ -7,92 +7,180 @@
 </head>
 
 <body>
-
 	<!-- Task.58 勤怠一括登録画面 -->
-	<!-- 共通ヘッダーとフッターは /common/layout 側で表示される -->
-
+	<script th:src="@{/js/companyAttendance.js}"></script>
 	<h2>勤怠一括登録</h2>
 
-	<!-- 検索エリア -->
-	<div class="well bs-component">
+	<!-- 完了メッセージ -->
+	<th:block th:if="${not #strings.isEmpty(message)}">
+		<div class="alert alert-info alert-dismissible fade in" role="alert">
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true">×</span>
+			</button>
+			<span th:text="${message}"></span>
+		</div>
+	</th:block>
 
-		<form th:action="@{/attendance/bulkRegist/search}" th:object="${bulkRegistForm}" method="post"
-			class="form-horizontal">
+	<!-- 検索・確定は同じフォーム -->
+	<form th:action="@{/attendance/bulkRegist}" th:object="${bulkRegistForm}" name="bulkRegistForm"
+		class="form-horizontal" method="post">
 
-			<!-- Task.58 検索時の入力エラー表示 -->
-			<div class="alert alert-danger" th:if="${#fields.hasAnyErrors()}">
-
-				<ul>
-					<li th:each="error : ${#fields.allErrors()}" th:text="${error}">
-					</li>
-				</ul>
-
-			</div>
-
+		<!-- 検索エリア -->
+		<div class="well bs-component">
 			<fieldset>
 				<legend>検索</legend>
-
-				<!-- 検索期間 -->
 				<div class="form-group">
-					<label for="searchPeriodFrom" class="col-lg-2 control-label">
-						期間
-					</label>
-
+					<label for="searchFrom" class="col-lg-2 control-label">期間</label>
 					<div class="col-lg-10 form-inline">
-
-						<input type="text" id="searchPeriodFrom" th:field="*{searchPeriodFrom}"
-							class="form-control datepickerFrom" placeholder="yyyy-MM-dd">
-
+						<input type="text" id="searchFrom" th:field="*{searchPeriodFrom}"
+							class="form-control datepickerFrom" th:errorclass="errorInput" style="width:10em;">
 						～
-
-						<input type="text" id="searchPeriodTo" th:field="*{searchPeriodTo}"
-							class="form-control datepickerTo" placeholder="yyyy-MM-dd">
-
+						<input type="text" id="searchTo" th:field="*{searchPeriodTo}" class="form-control datepickerTo"
+							th:errorclass="errorInput" style="width:10em;">
 					</div>
 				</div>
 
-				<!-- 会場名 -->
-				<div class="form-group">
-					<label for="placeId" class="col-lg-2 control-label">
-						会場名
-					</label>
-
+				<!-- 講師の場合のみ会場名を表示 -->
+				<div th:if="${session.loginUserDto.role == '0002'}" class="form-group">
+					<label for="placeName" class="col-lg-2 control-label">会場名</label>
 					<div class="col-lg-10">
-
-						<select id="placeId" th:field="*{placeId}" class="form-control">
-
-							<option value="">選択してください</option>
-
-							<option th:if="*{placeId != null}" th:value="*{placeId}" th:text="*{placeName}">
-							</option>
-
-						</select>
-
+						<input type="text" id="placeName" th:value="*{placeName}" class="form-control" readonly>
 					</div>
 				</div>
+				<input type="hidden" th:field="*{placeId}">
 
-				<!-- 検索ボタン -->
 				<div class="form-group">
-
 					<div class="col-lg-10 col-lg-offset-2">
-
-						<button type="submit" class="btn btn-primary">
-							検索
-						</button>
-
+						<!-- Task.58 検索ボタン -->
+						<input type="submit" name="search" value="検索" class="btn btn-primary"
+							th:formaction="@{/attendance/bulkRegist/search}">
 					</div>
-
 				</div>
-
 			</fieldset>
+		</div>
 
-		</form>
+		<!-- 入力エラー表示 -->
+		<ul style="padding-left:0; list-style:none;">
+			<li th:each="error : ${#fields.detailedErrors()}">
+				<span class="help-inline error" th:text="|* ${error.message}|"></span>
+			</li>
+		</ul>
 
-	</div>
+		<!-- 確定対象の日付インデックス -->
+		<input type="hidden" name="targetIndex" id="targetIndex">
 
-	<!-- Task.58 勤怠一覧エリア -->
-	<!-- 検索処理の実装後に追加する -->
+		<!-- 日付別勤怠一覧 -->
+		<table class="table" th:if="*{dailyAttendanceFormList != null and !dailyAttendanceFormList.isEmpty()}">
+			<tbody>
+				<th:block th:each="daily, stat : *{dailyAttendanceFormList}">
 
+					<!-- 日付が変わったときに見出しを表示 -->
+					<th:block th:if="${stat.first or daily.index !=
+                        bulkRegistForm.dailyAttendanceFormList[stat.index - 1].index}">
+						<tr style="background-color:#f5f5f5; border-top:solid medium;">
+							<th colspan="7" th:text="${daily.dispTrainingDate}"></th>
+							<th colspan="2">
+								<button type="button" th:value="${daily.index}"
+									class="btn btn-default copyAttendanceDaily">
+									受講生が入力した時刻をコピーする
+								</button>
+							</th>
+							<td>
+								<!-- Serviceの確定処理が完成するまでは無効 -->
+								<input type="submit" name="complete" value="確定する" class="btn btn-info"
+									th:attr="data-target-index=${daily.index}" disabled>
+							</td>
+						</tr>
+
+						<tr>
+							<th class="w120">ユーザー名</th>
+							<th class="w180">コース名</th>
+							<th class="w90">出勤</th>
+							<th class="w90">退勤</th>
+							<th class="w90">中抜け時間</th>
+							<th class="w90">ステータス</th>
+							<th class="w50">備考</th>
+							<th class="w90">開始時間</th>
+							<th class="w90">終了時間</th>
+							<th class="w90">欠席</th>
+						</tr>
+					</th:block>
+
+					<!-- 受講生の勤怠情報 -->
+					<tr>
+						<td th:text="${daily.userName}"></td>
+						<td th:text="${daily.courseName}"></td>
+						<td th:text="${daily.trainingStartTimeRaw}"></td>
+						<td th:text="${daily.trainingEndTimeRaw}"></td>
+						<td th:text="${daily.blankTimeValue}"></td>
+						<td th:text="${daily.statusDispName}"></td>
+
+						<!-- 備考 -->
+						<td>
+							<th:block th:if="${#strings.isEmpty(daily.note)}">なし</th:block>
+							<th:block th:unless="${#strings.isEmpty(daily.note)}">
+								<strong data-toggle="popover" data-placement="right" th:data-content="${daily.note}"
+									data-trigger="hover">あり</strong>
+							</th:block>
+						</td>
+
+						<!-- 開始時間 -->
+						<td>
+							<input type="text" th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTime|"
+								th:value="${daily.trainingStartTime}"
+								th:class="|form-control startTimeCompany${daily.index}|">
+						</td>
+
+						<!-- 終了時間 -->
+						<td>
+							<input type="text" th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTime|"
+								th:value="${daily.trainingEndTime}"
+								th:class="|form-control endTimeCompany${daily.index}|">
+						</td>
+
+						<!-- 欠席・登録用データ -->
+						<td>
+							<input type="checkbox" th:name="|dailyAttendanceFormList[${stat.index}].isAbsent|"
+								th:checked="${daily.isAbsent}">
+
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].dispTrainingDate|"
+								th:value="${daily.dispTrainingDate}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].lmsUserId|"
+								th:value="${daily.lmsUserId}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].userName|"
+								th:value="${daily.userName}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].courseName|"
+								th:value="${daily.courseName}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].companyAttendanceId|"
+								th:value="${daily.companyAttendanceId}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingDate|"
+								th:value="${daily.trainingDate}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].index|"
+								th:value="${daily.index}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTimeRaw|"
+								th:value="${daily.trainingStartTimeRaw}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTimeRaw|"
+								th:value="${daily.trainingEndTimeRaw}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].blankTimeValue|"
+								th:value="${daily.blankTimeValue}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].statusDispName|"
+								th:value="${daily.statusDispName}">
+							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].note|"
+								th:value="${daily.note}">
+							<input type="hidden"
+								th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTimeRounded|"
+								th:value="${daily.trainingStartTimeRounded}"
+								th:class="|startTimeCompanyRounded${daily.index}|">
+							<input type="hidden"
+								th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTimeRounded|"
+								th:value="${daily.trainingEndTimeRounded}"
+								th:class="|endTimeCompanyRounded${daily.index}|">
+						</td>
+					</tr>
+				</th:block>
+			</tbody>
+		</table>
+	</form>
 </body>
 
 </html>

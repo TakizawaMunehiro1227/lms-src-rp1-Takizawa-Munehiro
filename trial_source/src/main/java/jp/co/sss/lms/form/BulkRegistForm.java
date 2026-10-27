@@ -24,9 +24,12 @@ public class BulkRegistForm {
 
     /** 検索期間（終了日） */
     private String searchPeriodTo;
-    /**
-     * Task.58 日別勤怠情報フォームリスト
-     */
-    private List<DailyAttendanceForm> dailyAttendanceFormList= new ArrayList<>();
+   
+    
+ // Task.58 日付別勤怠情報一覧
+    private List<DailyAttendanceForm> dailyAttendanceFormList = new ArrayList<>();
+
+    // Task.58 確定対象の日付インデックス
+    private Integer targetIndex;
 
 }

@@ -58,5 +58,22 @@ public class DailyAttendanceForm {
 
 	/** 退勤時間（分） */
 	private Integer trainingEndTimeMinute;
+	
+	/** Task.58 企業入力勤怠情報ID */
+	private Integer companyAttendanceId;
 
+	/** Task.58 出勤時間（受講生入力・表示用） */
+	private String trainingStartTimeRaw;
+
+	/** Task.58 退勤時間（受講生入力・表示用） */
+	private String trainingEndTimeRaw;
+
+	/** Task.58 出勤時間（15分単位調整済み） */
+	private String trainingStartTimeRounded;
+
+	/** Task.58 退勤時間（15分単位調整済み） */
+	private String trainingEndTimeRounded;
+
+	/** Task.58 欠席フラグ */
+	private Boolean isAbsent;
 }
