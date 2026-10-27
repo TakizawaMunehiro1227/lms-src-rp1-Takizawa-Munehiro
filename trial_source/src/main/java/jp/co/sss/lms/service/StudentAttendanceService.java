@@ -16,6 +16,7 @@ import java.util.Map;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -24,6 +25,7 @@ import jp.co.sss.lms.dto.LoginUserDto;
 import jp.co.sss.lms.dto.PlaceDto;
 import jp.co.sss.lms.dto.UserAttendanceDto;
 import jp.co.sss.lms.dto.UserDetailDto;
+import jp.co.sss.lms.entity.TCompanyAttendance;
 import jp.co.sss.lms.entity.TStudentAttendance;
 import jp.co.sss.lms.enums.AttendanceStatusEnum;
 import jp.co.sss.lms.form.AttendanceForm;
@@ -32,6 +34,7 @@ import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.form.DailyAttendanceForm;
 import jp.co.sss.lms.mapper.MLmsUserMapper;
 import jp.co.sss.lms.mapper.MPlaceMapper;
+import jp.co.sss.lms.mapper.TCompanyAttendanceMapper;
 import jp.co.sss.lms.mapper.TStudentAttendanceMapper;
 import jp.co.sss.lms.util.AttendanceUtil;
 import jp.co.sss.lms.util.Constants;
@@ -66,12 +69,14 @@ public class StudentAttendanceService {
 
 	@Autowired
 	private PlaceService placeService;
-	
+
 	/**
 	 * Task.58 会場マスタMapper
 	 */
 	@Autowired
 	private MPlaceMapper mPlaceMapper;
+	@Autowired
+	private TCompanyAttendanceMapper tCompanyAttendanceMapper;
 
 	/**
 	 * 勤怠一覧情報取得
@@ -659,7 +664,7 @@ public class StudentAttendanceService {
 	 * @param result 入力チェック結果
 	 * @throws ParseException 日付変換時の例外
 	 */
-	public void searchInputCheck(BulkRegistForm bulkRegistForm,BindingResult result) throws ParseException {
+	public void searchInputCheck(BulkRegistForm bulkRegistForm, BindingResult result) throws ParseException {
 
 		// ① すでに入力エラーがある場合は終了
 		if (result.hasErrors()) {
@@ -782,7 +787,7 @@ public class StudentAttendanceService {
 			return;
 		}
 	}
-	
+
 	/**
 	 * Task.58 ユーザー勤怠情報の取得
 	 *
@@ -800,79 +805,80 @@ public class StudentAttendanceService {
 
 		Date from = sdf.parse(bulkRegistForm.getSearchPeriodFrom());
 		Date to = sdf.parse(bulkRegistForm.getSearchPeriodTo());
-		
-	    // ② ユーザー勤怠情報DTOリストを取得
-	    List<UserAttendanceDto> userAttendanceDtoList = mPlaceMapper.getUserAttendanceDto(placeId, from, to, Constants.DB_FLG_FALSE);
 
-	    // ③ 日次勤怠フォームリストを生成
-	    List<DailyAttendanceForm> attendanceList = new ArrayList<>();
-	    Map<String, Integer> dateIndexMap = new LinkedHashMap<>();
+		// ② ユーザー勤怠情報DTOリストを取得
+		List<UserAttendanceDto> userAttendanceDtoList = mPlaceMapper.getUserAttendanceDto(placeId, from, to,
+				Constants.DB_FLG_FALSE);
 
-	    // ④ 取得した勤怠情報をフォームに設定
-	    for (UserAttendanceDto dto : userAttendanceDtoList) {
-	        DailyAttendanceForm daily = new DailyAttendanceForm();
+		// ③ 日次勤怠フォームリストを生成
+		List<DailyAttendanceForm> attendanceList = new ArrayList<>();
+		Map<String, Integer> dateIndexMap = new LinkedHashMap<>();
 
-	        // 勤怠情報ID
-	        daily.setCompanyAttendanceId(dto.getCompanyAttendanceId());
-	        daily.setStudentAttendanceId(dto.getStudentAttendanceId());
+		// ④ 取得した勤怠情報をフォームに設定
+		for (UserAttendanceDto dto : userAttendanceDtoList) {
+			DailyAttendanceForm daily = new DailyAttendanceForm();
 
-	        // ユーザー情報
-	        if (dto.getLmsUserId() != null) {
-	            daily.setLmsUserId(String.valueOf(dto.getLmsUserId()));
-	        }
-	        daily.setUserName(dto.getUserName());
-	        daily.setCourseName(dto.getCourseName());
+			// 勤怠情報ID
+			daily.setCompanyAttendanceId(dto.getCompanyAttendanceId());
+			daily.setStudentAttendanceId(dto.getStudentAttendanceId());
 
-	        // 研修日付
-	        String trainingDate = dateUtil.toString(dto.getTrainingDate());
-	        daily.setTrainingDate(trainingDate);
-	        daily.setDispTrainingDate(
-	                dateUtil.dateToString(dto.getTrainingDate(), "yyyy年M月d日(E)"));
+			// ユーザー情報
+			if (dto.getLmsUserId() != null) {
+				daily.setLmsUserId(String.valueOf(dto.getLmsUserId()));
+			}
+			daily.setUserName(dto.getUserName());
+			daily.setCourseName(dto.getCourseName());
 
-	        // 日付ごとのインデックスを設定
-	        if (!dateIndexMap.containsKey(trainingDate)) {
-	            dateIndexMap.put(trainingDate, dateIndexMap.size());
-	        }
-	        daily.setIndex(String.valueOf(dateIndexMap.get(trainingDate)));
+			// 研修日付
+			String trainingDate = dateUtil.toString(dto.getTrainingDate());
+			daily.setTrainingDate(trainingDate);
+			daily.setDispTrainingDate(
+					dateUtil.dateToString(dto.getTrainingDate(), "yyyy年M月d日(E)"));
 
-	        // 受講生の出退勤時刻
-	        String startTime = dto.getTrainingStartTime();
-	        String endTime = dto.getTrainingEndTime();
+			// 日付ごとのインデックスを設定
+			if (!dateIndexMap.containsKey(trainingDate)) {
+				dateIndexMap.put(trainingDate, dateIndexMap.size());
+			}
+			daily.setIndex(String.valueOf(dateIndexMap.get(trainingDate)));
 
-	        daily.setTrainingStartTimeRaw( startTime == null || startTime.isBlank() ? Constants.NOT_ENTERED : startTime);
-	        daily.setTrainingEndTimeRaw(endTime == null || endTime.isBlank() ? Constants.NOT_ENTERED : endTime);
+			// 受講生の出退勤時刻
+			String startTime = dto.getTrainingStartTime();
+			String endTime = dto.getTrainingEndTime();
 
-	        // コピー用時刻（15分単位）
-	        daily.setTrainingStartTimeRounded(roundBulkAttendanceTime(startTime, true));
-	        daily.setTrainingEndTimeRounded(roundBulkAttendanceTime(endTime, false));
+			daily.setTrainingStartTimeRaw(startTime == null || startTime.isBlank() ? Constants.NOT_ENTERED : startTime);
+			daily.setTrainingEndTimeRaw(endTime == null || endTime.isBlank() ? Constants.NOT_ENTERED : endTime);
 
-	        // 中抜け時間
-	        daily.setBlankTime(dto.getBlankTime());
-	        if (dto.getBlankTime() != null) {
-	            daily.setBlankTimeValue(
-	                    String.valueOf(attendanceUtil.calcBlankTime(dto.getBlankTime())));
-	        }
+			// コピー用時刻（15分単位）
+			daily.setTrainingStartTimeRounded(roundBulkAttendanceTime(startTime, true));
+			daily.setTrainingEndTimeRounded(roundBulkAttendanceTime(endTime, false));
 
-	        // 勤怠ステータス
-	        if (dto.getStatus() != null) {
-	            daily.setStatus(String.valueOf(dto.getStatus()));
-	            AttendanceStatusEnum statusEnum = AttendanceStatusEnum.getEnum(dto.getStatus());
-	            if (statusEnum != null) {
-	                daily.setStatusDispName(statusEnum.name);
-	            }
-	        }
+			// 中抜け時間
+			daily.setBlankTime(dto.getBlankTime());
+			if (dto.getBlankTime() != null) {
+				daily.setBlankTimeValue(
+						String.valueOf(attendanceUtil.calcBlankTime(dto.getBlankTime())));
+			}
 
-	        // 備考・企業入力の初期値
-	        daily.setNote(dto.getNote());
-	        daily.setTrainingStartTime("");
-	        daily.setTrainingEndTime("");
-	        daily.setIsAbsent(false);
+			// 勤怠ステータス
+			if (dto.getStatus() != null) {
+				daily.setStatus(String.valueOf(dto.getStatus()));
+				AttendanceStatusEnum statusEnum = AttendanceStatusEnum.getEnum(dto.getStatus());
+				if (statusEnum != null) {
+					daily.setStatusDispName(statusEnum.name);
+				}
+			}
 
-	        attendanceList.add(daily);
-	    }
+			// 備考・企業入力の初期値
+			daily.setNote(dto.getNote());
+			daily.setTrainingStartTime("");
+			daily.setTrainingEndTime("");
+			daily.setIsAbsent(false);
 
-	    // ⑤ 勤怠一括登録フォームに設定
-	    bulkRegistForm.setDailyAttendanceFormList(attendanceList);
+			attendanceList.add(daily);
+		}
+
+		// ⑤ 勤怠一括登録フォームに設定
+		bulkRegistForm.setAttendanceList(attendanceList);
 	}
 
 	/**
@@ -884,48 +890,401 @@ public class StudentAttendanceService {
 	 */
 	private String roundBulkAttendanceTime(String time, boolean isStart) {
 
-	    // 未入力チェック
-	    if (time == null || time.isBlank() || Constants.NOT_ENTERED.equals(time)) {
-	        return "";
-	    }
+		// 未入力チェック
+		if (time == null || time.isBlank() || Constants.NOT_ENTERED.equals(time)) {
+			return "";
+		}
 
-	    String[] parts = time.split(":");
-	    if (parts.length != 2) {
-	        return "";
-	    }
+		String[] parts = time.split(":");
+		if (parts.length != 2) {
+			return "";
+		}
 
-	    int hour;
-	    int minute;
-	    try {
-	        hour = Integer.parseInt(parts[0]);
-	        minute = Integer.parseInt(parts[1]);
-	    } catch (NumberFormatException e) {
-	        return "";
-	    }
+		int hour;
+		int minute;
+		try {
+			hour = Integer.parseInt(parts[0]);
+			minute = Integer.parseInt(parts[1]);
+		} catch (NumberFormatException e) {
+			return "";
+		}
 
-	    // 時刻の範囲チェック
-	    if (hour < 0 || hour > 24 || minute < 0 || minute > 59
-	            || (hour == 24 && minute != 0)) {
-	        return "";
-	    }
+		// 時刻の範囲チェック
+		if (hour < 0 || hour > 24 || minute < 0 || minute > 59
+				|| (hour == 24 && minute != 0)) {
+			return "";
+		}
 
-	    int totalMinutes = hour * 60 + minute;
-	    int roundedMinutes;
+		int totalMinutes = hour * 60 + minute;
+		int roundedMinutes;
 
-	    if (isStart) {
-	        // 出勤：15分単位で切り上げ、09:00以降
-	        roundedMinutes = ((totalMinutes + 14) / 15) * 15;
-	        roundedMinutes = Math.max(roundedMinutes, 9 * 60);
-	    } else {
-	        // 退勤：15分単位で切り下げ、18:00以前
-	        roundedMinutes = (totalMinutes / 15) * 15;
-	        roundedMinutes = Math.min(roundedMinutes, 18 * 60);
-	    }
+		if (isStart) {
+			// 出勤：15分単位で切り上げ、09:00以降
+			roundedMinutes = ((totalMinutes + 14) / 15) * 15;
+			roundedMinutes = Math.max(roundedMinutes, 9 * 60);
+		} else {
+			// 退勤：15分単位で切り下げ、18:00以前
+			roundedMinutes = (totalMinutes / 15) * 15;
+			roundedMinutes = Math.min(roundedMinutes, 18 * 60);
+		}
 
-	    return String.format("%02d:%02d",
-	            roundedMinutes / 60, roundedMinutes % 60);
+		return String.format("%02d:%02d",
+				roundedMinutes / 60, roundedMinutes % 60);
 	}
-	
-	
+
+	/**
+	 * Task.58 勤怠一括登録 入力チェック
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @param result 入力チェック結果
+	 */
+	public void bulkRegistInputCheck(
+			BulkRegistForm bulkRegistForm,
+			BindingResult result) {
+
+		// ① 勤怠一覧と確定対象の日付インデックスを取得
+		List<DailyAttendanceForm> attendanceList = bulkRegistForm.getAttendanceList();
+
+		Integer targetIndex = bulkRegistForm.getTargetIndex();
+
+		if (attendanceList == null || attendanceList.isEmpty()
+				|| targetIndex == null) {
+			result.reject("haserror");
+			return;
+		}
+
+		String target = String.valueOf(targetIndex);
+		boolean found = false;
+
+		// ② 確定対象の日付のみチェック
+		for (DailyAttendanceForm attendance : attendanceList) {
+
+			if (attendance == null) {
+				result.reject("haserror");
+				continue;
+			}
+
+			// 確定対象の日付以外は処理しない
+			if (!target.equals(attendance.getIndex())) {
+				continue;
+			}
+
+			found = true;
+
+			String trainingDate = attendance.getTrainingDate();
+			String startTime = attendance.getTrainingStartTime();
+			String endTime = attendance.getTrainingEndTime();
+
+			boolean isAbsent = Boolean.TRUE.equals(attendance.getIsAbsent());
+
+			boolean hasStart = startTime != null
+					&& !startTime.trim().isEmpty();
+
+			boolean hasEnd = endTime != null
+					&& !endTime.trim().isEmpty();
+
+			// ③ 欠席の場合
+			if (isAbsent) {
+
+				// 欠席なのに時刻が入力されている
+				if (hasStart || hasEnd) {
+					result.reject(
+							"absentAndTrainingTimeExistsBulk",
+							new Object[] { trainingDate },
+							null);
+				}
+
+				continue;
+			}
+
+			// ④ 出退勤時間が両方未入力
+			if (!hasStart && !hasEnd) {
+				result.reject(
+						"requiredTrainingTimeBulk",
+						new Object[] { trainingDate },
+						null);
+				continue;
+			}
+
+			// ⑤ 出退勤時間の片方が未入力
+			if (!hasStart || !hasEnd) {
+				result.reject(
+						"attendance.punchInEmptyBulk",
+						new Object[] { trainingDate },
+						null);
+				continue;
+			}
+
+			// ⑥ 時刻形式チェック
+			Integer startMinutes = parseTimeMinutes(startTime);
+			Integer endMinutes = parseTimeMinutes(endTime);
+
+			if (startMinutes == null || endMinutes == null) {
+				result.reject(
+						"trainingTimeBulk",
+						new Object[] { trainingDate },
+						null);
+				continue;
+			}
+
+			// ⑦ 24:00を超えていないかチェック
+			boolean isOver24 = false;
+
+			if (startMinutes > 1440) {
+				result.reject(
+						"maxvalBulk",
+						new Object[] {
+								trainingDate, "出勤時間", "24:00"
+						},
+						null);
+				isOver24 = true;
+			}
+
+			if (endMinutes > 1440) {
+				result.reject(
+						"maxvalBulk",
+						new Object[] {
+								trainingDate, "退勤時間", "24:00"
+						},
+						null);
+				isOver24 = true;
+			}
+
+			if (isOver24) {
+				continue;
+			}
+
+			// ⑧ 出勤時間・退勤時間の前後関係チェック
+			if (startMinutes >= endMinutes) {
+				result.reject(
+						"attendance.trainingTimeRangeBulk",
+						new Object[] { trainingDate },
+						null);
+			}
+		}
+
+		// ⑨ 確定対象が存在しない場合
+		if (!found) {
+			result.reject("haserror");
+		}
+	}
+
+	/**
+	 * HH:mm形式を分に変換
+	 *
+	 * @param time 時刻
+	 * @return 分。不正な場合はnull
+	 */
+	private Integer parseTimeMinutes(String time) {
+
+		if (time == null ||
+				!time.trim().matches("[0-9]{2}:[0-9]{2}")) {
+			return null;
+		}
+
+		String[] parts = time.trim().split(":");
+
+		int hour = Integer.parseInt(parts[0]);
+		int minute = Integer.parseInt(parts[1]);
+
+		if (minute > 59) {
+			return null;
+		}
+
+		return hour * 60 + minute;
+	}
+
+	/**
+	 * 時刻形式チェック（HH:mm）
+	 *
+	 * @param time 時刻文字列
+	 * @return true: 正常、false: 異常
+	 */
+	private boolean isTimeFormat(String time) {
+
+		if (time == null || time.isBlank()) {
+			return false;
+		}
+
+		if (!time.matches("^([01]\\d|2[0-3]):([0-5]\\d)$")) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+/**
+ * Task.58 勤怠一括登録処理
+ *
+ * @param bulkRegistForm 勤怠一括登録フォーム
+ * @return 完了メッセージ
+ * @throws ParseException 日付変換時の例外
+ */
+@Transactional(rollbackFor = Exception.class)
+public String bulkUpdate(BulkRegistForm bulkRegistForm)
+        throws ParseException {
+
+    // ① 勤怠情報（企業入力）リストを生成
+    List<TCompanyAttendance> companyAttendanceList =
+            new ArrayList<>();
+
+    Date date = new Date();
+
+    // ② 確定対象の日付インデックスを取得
+    Integer targetIndex = bulkRegistForm.getTargetIndex();
+
+    if (targetIndex == null
+            || bulkRegistForm.getAttendanceList() == null
+            || bulkRegistForm.getAttendanceList().isEmpty()) {
+        throw new IllegalArgumentException(
+                "確定対象の勤怠情報がありません。");
+    }
+
+    String target = String.valueOf(targetIndex);
+
+    // ③ 勤怠リストの件数分繰り返す
+    for (DailyAttendanceForm daily
+            : bulkRegistForm.getAttendanceList()) {
+
+        if (daily == null) {
+            throw new IllegalArgumentException(
+                    "勤怠情報が不正です。");
+        }
+
+        // 確定対象の日付のみ処理
+        if (!target.equals(daily.getIndex())) {
+            continue;
+        }
+
+        TCompanyAttendance attendance;
+
+        // ④ 企業入力勤怠情報IDが設定されている場合
+        if (daily.getCompanyAttendanceId() != null) {
+
+            // 既存の勤怠情報を取得
+            attendance =
+                    tCompanyAttendanceMapper
+                            .findByCompanyAttendanceId(
+                                    daily.getCompanyAttendanceId(),
+                                    Constants.DB_FLG_FALSE);
+
+            if (attendance == null) {
+                throw new IllegalStateException(
+                        "更新対象の勤怠情報が存在しません。");
+            }
+
+        } else {
+
+            // ⑤ 新規登録の場合
+            attendance = new TCompanyAttendance();
+
+            attendance.setLmsUserId(
+                    Integer.valueOf(daily.getLmsUserId()));
+
+            attendance.setTrainingDate(
+                    dateUtil.parse(daily.getTrainingDate()));
+
+            attendance.setAccountId(
+                    loginUserDto.getAccountId());
+
+            attendance.setDeleteFlg(
+                    Constants.DB_FLG_FALSE);
+
+            attendance.setFirstCreateUser(
+                    loginUserDto.getLmsUserId());
+
+            attendance.setFirstCreateDate(date);
+        }
+
+        // ⑥ 出退勤時間・勤怠ステータスを設定
+        boolean isAbsent =
+                Boolean.TRUE.equals(daily.getIsAbsent());
+
+        if (isAbsent) {
+
+            // 欠席の場合
+            attendance.setTrainingStartTime("");
+            attendance.setTrainingEndTime("");
+
+            attendance.setStatus(
+                    AttendanceStatusEnum.ABSENT.code);
+
+        } else {
+
+            TrainingTime startTime = new TrainingTime(
+                    daily.getTrainingStartTime());
+
+            TrainingTime endTime = new TrainingTime(
+                    daily.getTrainingEndTime());
+
+            attendance.setTrainingStartTime(
+                    startTime.getFormattedString());
+
+            attendance.setTrainingEndTime(
+                    endTime.getFormattedString());
+
+            // 勤怠Utilから勤怠状態を取得
+            AttendanceStatusEnum status =
+                    attendanceUtil.getStatus(
+                            startTime, endTime);
+
+            if (status == null) {
+                throw new IllegalStateException(
+                        "勤怠状態を判定できません。");
+            }
+
+            attendance.setStatus(status.code);
+        }
+
+        // ⑦ 最終更新者・最終更新日時を設定
+        attendance.setLastModifiedUser(
+                loginUserDto.getLmsUserId());
+
+        attendance.setLastModifiedDate(date);
+
+        // ⑧ 勤怠情報リストに追加
+        companyAttendanceList.add(attendance);
+    }
+
+    // 確定対象がない場合
+    if (companyAttendanceList.isEmpty()) {
+        throw new IllegalArgumentException(
+                "確定対象の勤怠情報がありません。");
+    }
+
+    // ⑨ 勤怠情報（企業入力）を登録・更新
+    for (TCompanyAttendance attendance
+            : companyAttendanceList) {
+
+        Boolean updateResult;
+
+        if (attendance.getCompanyAttendanceId() != null) {
+
+            // UPDATE
+            updateResult =
+                    tCompanyAttendanceMapper.update(attendance);
+
+        } else {
+
+            // INSERT
+            updateResult =
+                    tCompanyAttendanceMapper.insert(attendance);
+        }
+
+        if (!Boolean.TRUE.equals(updateResult)) {
+            throw new IllegalStateException(
+                    "勤怠情報の登録・更新に失敗しました。");
+        }
+    }
+
+    // ⑩ 完了メッセージ
+    return messageUtil.getMessage(
+            "regist.complete",
+            new String[] { "勤怠情報" });
+}
+
+
+
 
 }

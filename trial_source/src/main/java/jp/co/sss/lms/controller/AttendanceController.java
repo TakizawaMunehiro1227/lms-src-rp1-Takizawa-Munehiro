@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jp.co.sss.lms.dto.AttendanceManagementDto;
 import jp.co.sss.lms.dto.LoginUserDto;
@@ -217,27 +218,33 @@ public class AttendanceController {
 	    return "attendance/list";
 	}
 	
-	/**
-	 * Task.58 勤怠一括登録画面 初期表示
-	 *
-	 * @param bulkRegistForm 勤怠一括登録フォーム
-	 * @param model モデル
-	 * @return 勤怠一括登録画面
-	 */
-	@RequestMapping(path = "/bulkRegist", method = RequestMethod.GET)
-	public String bulkRegist(
-	        @ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
-	        Model model) {
 
-	    // ① 勤怠一括登録フォームの初期設定
-	    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+/**
+ * Task.58 勤怠一括登録画面 初期表示
+ */
+@RequestMapping(path = "/bulkRegist",method = RequestMethod.GET)
+public String bulkRegist(@ModelAttribute("bulkRegistForm")BulkRegistForm bulkRegistForm,Model model) throws ParseException {
 
-	    // ② フォームをModelに設定
-	    model.addAttribute("bulkRegistForm", bulkRegistForm);
+    // ① 会場情報の設定
+    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
 
-	    // ③ 勤怠一括登録画面を表示
-	    return "attendance/bulkRegist";
-	}
+    // ② 確定後、検索条件がある場合は再検索
+    if (bulkRegistForm.getSearchPeriodFrom() != null
+            && !bulkRegistForm.getSearchPeriodFrom().isBlank()
+            && bulkRegistForm.getSearchPeriodTo() != null
+            && !bulkRegistForm.getSearchPeriodTo().isBlank()) {
+
+        studentAttendanceService.getUserAttendance(
+                bulkRegistForm);
+    }
+
+    // ③ フォームをModelに設定
+    model.addAttribute("bulkRegistForm", bulkRegistForm);
+
+    // ④ 勤怠一括登録画面を表示
+    return "attendance/bulkRegist";
+}
+
 	
 	/**
 	 * Task.58 勤怠一括登録画面
@@ -257,8 +264,7 @@ public class AttendanceController {
 	    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
 
 	    // ② Task.58 検索時の入力チェック
-	    studentAttendanceService.searchInputCheck(
-	            bulkRegistForm, result);
+	    studentAttendanceService.searchInputCheck(bulkRegistForm, result);
 
 	    // ③ 入力エラーがある場合
 	    if (result.hasErrors()) {
@@ -270,6 +276,40 @@ public class AttendanceController {
 
 	    // ⑤ 勤怠一括登録画面を表示
 	    return "attendance/bulkRegist";
+	}
+	
+	/**
+	 * Task.58 勤怠一括登録画面
+	 * 『確定する』ボタン押下処理
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @param result 入力チェック結果
+	 * @param redirectAttributes リダイレクト属性
+	 * @return 勤怠一括登録画面
+	 * @throws ParseException 日付変換時の例外
+	 */
+	@RequestMapping(path = "/bulkRegist/complete", method = RequestMethod.POST)
+	public String bulkRegistComplete(@ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
+	        BindingResult result,RedirectAttributes redirectAttributes) throws ParseException {
+
+	    // ① 入力チェック
+	    studentAttendanceService.bulkRegistInputCheck(bulkRegistForm, result);
+
+	    // ② エラーがある場合
+	    if (result.hasErrors()) {
+	        studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+	        return "attendance/bulkRegist";
+	    }
+
+	    // ③ 一括登録処理
+	    String message = studentAttendanceService.bulkUpdate(bulkRegistForm);
+
+	    // ④ 完了メッセージを設定
+	    redirectAttributes.addFlashAttribute("message", message);
+	    redirectAttributes.addFlashAttribute("bulkRegistForm", bulkRegistForm);
+
+	    // ⑤ 再表示
+	    return "redirect:/attendance/bulkRegist";
 	}
 	
 

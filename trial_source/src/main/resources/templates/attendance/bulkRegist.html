@@ -22,7 +22,7 @@
 	</th:block>
 
 	<!-- 検索・確定は同じフォーム -->
-	<form th:action="@{/attendance/bulkRegist}" th:object="${bulkRegistForm}" name="bulkRegistForm"
+	<form th:action="@{/attendance/bulkRegist/complete}" th:object="${bulkRegistForm}" name="bulkRegistForm"
 		class="form-horizontal" method="post">
 
 		<!-- 検索エリア -->
@@ -49,6 +49,7 @@
 				</div>
 				<input type="hidden" th:field="*{placeId}">
 
+
 				<div class="form-group">
 					<div class="col-lg-10 col-lg-offset-2">
 						<!-- Task.58 検索ボタン -->
@@ -66,17 +67,14 @@
 			</li>
 		</ul>
 
-		<!-- 確定対象の日付インデックス -->
-		<input type="hidden" name="targetIndex" id="targetIndex">
-
 		<!-- 日付別勤怠一覧 -->
-		<table class="table" th:if="*{dailyAttendanceFormList != null and !dailyAttendanceFormList.isEmpty()}">
+		<table class="table" th:if="*{attendanceList != null and !attendanceList.isEmpty()}">
 			<tbody>
-				<th:block th:each="daily, stat : *{dailyAttendanceFormList}">
+				<th:block th:each="daily, stat : *{attendanceList}">
 
 					<!-- 日付が変わったときに見出しを表示 -->
 					<th:block th:if="${stat.first or daily.index !=
-                        bulkRegistForm.dailyAttendanceFormList[stat.index - 1].index}">
+                        bulkRegistForm.attendanceList[stat.index - 1].index}">
 						<tr style="background-color:#f5f5f5; border-top:solid medium;">
 							<th colspan="7" th:text="${daily.dispTrainingDate}"></th>
 							<th colspan="2">
@@ -88,7 +86,7 @@
 							<td>
 								<!-- Serviceの確定処理が完成するまでは無効 -->
 								<input type="submit" name="complete" value="確定する" class="btn btn-info"
-									th:attr="data-target-index=${daily.index}" disabled>
+									th:attr="onclick='return setTargetIndex(' + ${daily.index} + ');'">
 							</td>
 						</tr>
 
@@ -126,53 +124,51 @@
 
 						<!-- 開始時間 -->
 						<td>
-							<input type="text" th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTime|"
+							<input type="text" th:name="|attendanceList[${stat.index}].trainingStartTime|"
 								th:value="${daily.trainingStartTime}"
 								th:class="|form-control startTimeCompany${daily.index}|">
 						</td>
 
 						<!-- 終了時間 -->
 						<td>
-							<input type="text" th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTime|"
+							<input type="text" th:name="|attendanceList[${stat.index}].trainingEndTime|"
 								th:value="${daily.trainingEndTime}"
 								th:class="|form-control endTimeCompany${daily.index}|">
 						</td>
 
 						<!-- 欠席・登録用データ -->
 						<td>
-							<input type="checkbox" th:name="|dailyAttendanceFormList[${stat.index}].isAbsent|"
+							<input type="checkbox" th:name="|attendanceList[${stat.index}].isAbsent|"
 								th:checked="${daily.isAbsent}">
 
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].dispTrainingDate|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].dispTrainingDate|"
 								th:value="${daily.dispTrainingDate}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].lmsUserId|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].lmsUserId|"
 								th:value="${daily.lmsUserId}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].userName|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].userName|"
 								th:value="${daily.userName}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].courseName|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].courseName|"
 								th:value="${daily.courseName}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].companyAttendanceId|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].companyAttendanceId|"
 								th:value="${daily.companyAttendanceId}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingDate|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].trainingDate|"
 								th:value="${daily.trainingDate}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].index|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].index|"
 								th:value="${daily.index}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTimeRaw|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].trainingStartTimeRaw|"
 								th:value="${daily.trainingStartTimeRaw}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTimeRaw|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].trainingEndTimeRaw|"
 								th:value="${daily.trainingEndTimeRaw}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].blankTimeValue|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].blankTimeValue|"
 								th:value="${daily.blankTimeValue}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].statusDispName|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].statusDispName|"
 								th:value="${daily.statusDispName}">
-							<input type="hidden" th:name="|dailyAttendanceFormList[${stat.index}].note|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].note|"
 								th:value="${daily.note}">
-							<input type="hidden"
-								th:name="|dailyAttendanceFormList[${stat.index}].trainingStartTimeRounded|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].trainingStartTimeRounded|"
 								th:value="${daily.trainingStartTimeRounded}"
 								th:class="|startTimeCompanyRounded${daily.index}|">
-							<input type="hidden"
-								th:name="|dailyAttendanceFormList[${stat.index}].trainingEndTimeRounded|"
+							<input type="hidden" th:name="|attendanceList[${stat.index}].trainingEndTimeRounded|"
 								th:value="${daily.trainingEndTimeRounded}"
 								th:class="|endTimeCompanyRounded${daily.index}|">
 						</td>

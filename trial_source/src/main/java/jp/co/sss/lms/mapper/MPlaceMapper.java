@@ -44,4 +44,6 @@ public interface MPlaceMapper {
             @Param("from") Date from,
             @Param("to") Date to,
             @Param("deleteFlg") Short deleteFlg);
+    
+   
 }

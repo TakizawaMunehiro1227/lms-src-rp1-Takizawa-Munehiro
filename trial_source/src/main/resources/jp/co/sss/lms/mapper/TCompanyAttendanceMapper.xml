@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jp.co.sss.lms.mapper.TCompanyAttendanceMapper">
+
+    <resultMap id="tCompanyAttendanceResultMap"
+        type="jp.co.sss.lms.entity.TCompanyAttendance">
+        <id property="companyAttendanceId" column="company_attendance_id"/>
+        <result property="lmsUserId" column="lms_user_id"/>
+        <result property="trainingDate" column="training_date"/>
+        <result property="trainingStartTime" column="training_start_time"/>
+        <result property="trainingEndTime" column="training_end_time"/>
+        <result property="status" column="status"/>
+        <result property="accountId" column="account_id"/>
+        <result property="deleteFlg" column="delete_flg"/>
+        <result property="firstCreateUser" column="first_create_user"/>
+        <result property="firstCreateDate" column="first_create_date"/>
+        <result property="lastModifiedUser" column="last_modified_user"/>
+        <result property="lastModifiedDate" column="last_modified_date"/>
+    </resultMap>
+
+    <!-- task.58 勤怠情報（企業入力）取得 -->
+    <select id="findByCompanyAttendanceId"
+        resultMap="tCompanyAttendanceResultMap">
+        SELECT
+            *
+        FROM
+            t_company_attendance
+        WHERE
+            company_attendance_id = #{companyAttendanceId}
+            AND delete_flg = #{deleteFlg}
+    </select>
+
+    <!-- Task.58 勤怠情報（企業入力）登録 -->
+    <insert id="insert"
+        parameterType="jp.co.sss.lms.entity.TCompanyAttendance">
+        INSERT INTO t_company_attendance (
+            lms_user_id,
+            training_date,
+            training_start_time,
+            training_end_time,
+            status,
+            account_id,
+            delete_flg,
+            first_create_user,
+            first_create_date,
+            last_modified_user,
+            last_modified_date
+        )
+        VALUES (
+            #{lmsUserId},
+            #{trainingDate},
+            #{trainingStartTime},
+            #{trainingEndTime},
+            #{status},
+            #{accountId},
+            #{deleteFlg},
+            #{firstCreateUser},
+            #{firstCreateDate},
+            #{lastModifiedUser},
+            #{lastModifiedDate}
+        )
+    </insert>
+
+
+<!-- Task.58 勤怠情報（企業入力）更新 -->
+<update id="update"
+    parameterType="jp.co.sss.lms.entity.TCompanyAttendance">
+
+    UPDATE
+        t_company_attendance
+    SET
+        training_start_time = #{trainingStartTime},
+        training_end_time = #{trainingEndTime},
+        status = #{status},
+        last_modified_user = #{lastModifiedUser},
+        last_modified_date = #{lastModifiedDate}
+    WHERE
+        company_attendance_id = #{companyAttendanceId}
+
+</update>
+
+
+
+</mapper>
