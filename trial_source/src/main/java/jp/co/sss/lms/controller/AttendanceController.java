@@ -4,12 +4,15 @@ import java.text.ParseException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jp.co.sss.lms.dto.AttendanceManagementDto;
@@ -19,6 +22,7 @@ import jp.co.sss.lms.form.AttendanceForm;
 import jp.co.sss.lms.form.AttendanceSearchForm;
 import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.service.StudentAttendanceService;
+import jp.co.sss.lms.service.UserService;
 import jp.co.sss.lms.util.Constants;
 import jp.co.sss.lms.util.LoginUserUtil;
 import jp.co.sss.lms.util.MessageUtil;
@@ -45,27 +49,120 @@ public class AttendanceController {
 	@Autowired
 	private MessageUtil messageUtil;
 
+	// 瀧澤-Task72 ユーザー基本情報取得
+	@Autowired
+	private UserService userService;
+
 	/**
 	 * 勤怠管理画面 初期表示
-	 * 
+	 *
+	 * @param lmsUserId LMSユーザーID
+	 * @param courseId コースID
+	 * @param model モデル
+	 * @return 勤怠管理画面
+	 * @throws ParseException
+	 */
+
+	/**
+	 * 勤怠管理画面 初期表示
+	 *
 	 * @param lmsUserId
 	 * @param courseId
 	 * @param model
 	 * @return 勤怠管理画面
 	 * @throws ParseException
 	 */
-
 	@RequestMapping(path = "/detail", method = RequestMethod.GET)
-	public String index(Model model) throws ParseException {
+	public String index(
+			@RequestParam(value = "lmsUserId", required = false) Integer lmsUserId,
+			@RequestParam(value = "courseId", required = false) Integer courseId,
+			Model model) throws ParseException {
 
-		// 勤怠一覧の取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+		// 瀧澤-Task72 受講生情報取得
+
+		// 受講生権限の場合
+		if (loginUserUtil.isStudent()) {
+
+			courseId = loginUserDto.getCourseId();
+			lmsUserId = loginUserDto.getLmsUserId();
+
+		} else {
+
+			// 受講生権限以外の場合
+			// URLパラメータチェック
+			if (courseId == null || lmsUserId == null) {
+				return "redirect:/attendance/list";
+			}
+
+			// ユーザー基本情報取得
+			UserDetailDto userDetailDto = userService.getUserBasicInfo(lmsUserId);
+			
+
+			 // 瀧澤-Task72 動作確認
+			System.out.println("===== Task72 確認 =====");
+			System.out.println("courseId = " + courseId);
+			System.out.println("lmsUserId = " + lmsUserId);
+			System.out.println("isCompany = " + loginUserUtil.isCompany());
+			System.out.println("ログイン企業ID = " + loginUserDto.getCompanyId());
+
+			if (userDetailDto != null) {
+			    System.out.println("受講生企業ID = "
+			            + userDetailDto.getCompanyId());
+			    System.out.println("受講生コースID = "
+			            + userDetailDto.getCourseId());
+			} else {
+			    System.out.println("userDetailDto = null");
+			}
+
+
+			// 対象受講生の存在・コースIDを確認
+			if (userDetailDto == null
+					|| !courseId.equals(userDetailDto.getCourseId())) {
+
+				return "redirect:/attendance/list";
+			}
+
+			// 瀧澤-Task72 企業担当者の閲覧権限確認
+			if (loginUserUtil.isCompany()) {
+
+				// ログイン企業と対象受講生の企業が一致するか確認
+				if (loginUserDto.getCompanyId() == null
+						|| !loginUserDto.getCompanyId()
+								.equals(userDetailDto.getCompanyId())) {
+
+					throw new ResponseStatusException(
+							HttpStatus.FORBIDDEN);
+				}
+
+			} else {
+
+				// 講師等の閲覧権限は別途実装
+				throw new ResponseStatusException(
+						HttpStatus.FORBIDDEN);
+			}
+
+			// ユーザー基本情報DTOを画面に設定
+			model.addAttribute("userDetailDto", userDetailDto);
+
+		} // 受講生権限の分岐終了
+
+		// 勤怠管理画面用DTOリスト取得
+		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService.getAttendanceManagement(
+				courseId, lmsUserId);
+
+		model.addAttribute(
+				"attendanceManagementDtoList",
+				attendanceManagementDtoList);
 
 		// 瀧澤-Task25 過去日の出席未入力チェック
-		Boolean notEnterFlg = studentAttendanceService.notEnterCheck();
+		Boolean notEnterFlg = false;
+
+		if (loginUserUtil.isStudent()) {
+			notEnterFlg = studentAttendanceService.notEnterCheck();
+		}
+
 		model.addAttribute("notEnterFlg", notEnterFlg);
+
 		return "attendance/detail";
 	}
 
@@ -214,7 +311,7 @@ public class AttendanceController {
 		model.addAttribute("showPastFlg", isCompany);
 
 		// Task71：設定期間の表示文字列を取得
-		String pastTimeLabel =messageUtil.getMessage("setting.search.pastTimeLabel");
+		String pastTimeLabel = messageUtil.getMessage("setting.search.pastTimeLabel");
 
 		// 画面に設定
 		model.addAttribute("pastTimeLabel", pastTimeLabel);

@@ -3,11 +3,10 @@ package jp.co.sss.lms.service;
 import java.util.Date;
 import java.util.List;
 
-import jakarta.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.servlet.http.HttpSession;
 import jp.co.sss.lms.dto.DailyReportDto;
 import jp.co.sss.lms.dto.ExamResultDto;
 import jp.co.sss.lms.dto.LmsUserDto;
@@ -43,6 +42,9 @@ public class UserService {
 	private TDailyReportSubmitMapper tDailyReportSubmitMapper;
 	@Autowired
 	private TExamResultMapper tExamResultMapper;
+	
+
+
 
 	/**
 	 * セキュリティ同意フラグ登録
@@ -83,6 +85,20 @@ public class UserService {
 		lmsUserDto.setDailyReportDtoList(dailyReportDtoList);
 
 		return lmsUserDto;
+	}
+
+	/**
+	 * 瀧澤-Task72
+	 * LMSユーザー基本情報取得
+	 *
+	 * @param lmsUserId LMSユーザーID
+	 * @return ユーザー基本情報DTO
+	 */
+	public UserDetailDto getUserBasicInfo(Integer lmsUserId) {
+
+		return mLmsUserMapper.getUserDetail(
+				lmsUserId,
+				Constants.DB_FLG_FALSE);
 	}
 
 }

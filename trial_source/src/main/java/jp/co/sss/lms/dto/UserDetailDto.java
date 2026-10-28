@@ -27,6 +27,10 @@ public class UserDetailDto {
 	private String hopeViaTraning;
 	/** プログラム経験 */
 	private Short programmingExperience;
+
+	// 瀧澤-Task72 企業ID
+	private Integer companyId;
+
 	/** 企業名 */
 	private String companyName;
 	/** コースID */

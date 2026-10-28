@@ -107,10 +107,26 @@
 							<td th:text="${student.courseName}">デモコース</td>
 							<td th:text="${student.companyName}">デモ企業</td>
 							<td th:text="${student.placeName}">デモ会場</td>
+
+
+
+							<!-- 瀧澤-Task72 勤怠管理画面への遷移 -->
 							<td>
-								<!-- 勤怠確認の遷移先は未確定のため一時的に無効化 -->
-								<button type="button" class="btn btn-default btn-sm" disabled>勤怠確認</button>
+								<a th:if="${showPastFlg == true}"
+									th:href="@{/attendance/detail(courseId=${student.courseId},lmsUserId=${student.lmsUserId})}"
+									class="btn btn-default btn-sm">
+									勤怠確認
+								</a>
+
+								<button th:unless="${showPastFlg == true}" type="button" class="btn btn-default btn-sm"
+									disabled>
+									勤怠確認
+								</button>
 							</td>
+							<!-- 瀧澤-Task72 ここまで -->
+
+
+
 						</tr>
 					</tbody>
 				</table>

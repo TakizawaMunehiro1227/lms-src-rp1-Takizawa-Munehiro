@@ -41,6 +41,44 @@
 			<p><a th:href="@{/attendance/update}">勤怠情報を直接編集する</a></p>
 		</div>
 	</th:block>
+	
+	<!-- 瀧澤-Task72 受講生情報表示 -->
+<th:block th:if="${session.loginUserDto.role != '0001' and userDetailDto != null}">
+
+    <h3>受講生情報</h3>
+
+    <table class="table table-hover wh">
+        <tbody>
+            <tr>
+                <th>ユーザー名</th>
+                <td th:text="${userDetailDto.userName}"></td>
+            </tr>
+
+            <tr>
+                <th>企業名</th>
+                <td th:text="${userDetailDto.companyName}"></td>
+            </tr>
+
+            <tr>
+                <th>コース名</th>
+                <td th:text="${userDetailDto.courseName}"></td>
+            </tr>
+
+            <tr>
+                <th>会場名</th>
+                <td>
+                    <span th:text="${userDetailDto.placeName}"></span>
+                    <small th:if="${not #strings.isEmpty(userDetailDto.placeNote)}"
+                           th:text="|（${userDetailDto.placeNote}）|"></small>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</th:block>
+<!-- 瀧澤-Task72 ここまで -->
+
+<h3>勤怠情報</h3>
 
 	<div class="row">
 		<div class="bs-component col-sm-12">

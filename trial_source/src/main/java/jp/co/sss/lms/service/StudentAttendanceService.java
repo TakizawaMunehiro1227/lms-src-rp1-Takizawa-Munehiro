@@ -77,6 +77,9 @@ public class StudentAttendanceService {
 	private MPlaceMapper mPlaceMapper;
 	@Autowired
 	private TCompanyAttendanceMapper tCompanyAttendanceMapper;
+	
+
+
 
 	/**
 	 * 勤怠一覧情報取得
