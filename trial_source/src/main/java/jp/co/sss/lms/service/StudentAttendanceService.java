@@ -574,6 +574,47 @@ public class StudentAttendanceService {
 		String companyName = attendanceSearchForm.getCompanyName();
 		String userName = attendanceSearchForm.getUserName();
 
+		// Task71：企業担当者か判定
+		boolean isCompany = loginUserUtil.isCompany();
+
+
+	    // Task71：経過フラグを取得
+	    // 未チェック・未指定の場合は0として扱う
+	    int pastFlg = isCompany
+	            && Integer.valueOf(1).equals(
+	                    attendanceSearchForm.getPastFlg())
+	            ? 1 : 0;
+
+	    attendanceSearchForm.setPastFlg(pastFlg);
+
+
+		// Task71：企業担当者の場合は所属企業IDを取得
+		Integer companyId = null;
+		if (isCompany) {
+			companyId = loginUserDto.getCompanyId();
+
+			if (companyId == null) {
+				throw new IllegalStateException(
+						"ログインユーザーの企業IDが取得できません。");
+			}
+		}
+		
+
+	    // Task71：期間超過を判定する基準日
+	    java.sql.Date cutoffDate = null;
+
+	    if (isCompany && pastFlg == 0) {
+
+	        // プロパティから設定期間を取得
+	        int pastTime = Integer.parseInt(
+	                messageUtil.getMessage("setting.search.pastTime"));
+
+	        // 設定期間を引いた基準日を計算
+	        cutoffDate = java.sql.Date.valueOf(
+	                LocalDate.now().minusMonths(pastTime));
+	    }
+
+
 		// ② 講師権限の場合、LMSユーザーIDを設定
 		Integer teacherLmsUserId = null;
 
@@ -582,13 +623,19 @@ public class StudentAttendanceService {
 		}
 
 		// ③ 受講生情報一覧取得
-		return mLmsUserMapper.getUserDetailForSearch(
-				courseName,
-				companyName,
-				userName,
-				teacherLmsUserId,
-				Constants.CODE_VAL_ROLL_STUDENT,
-				Constants.DB_FLG_FALSE);
+
+return mLmsUserMapper.getUserDetailForSearch(
+        isCompany ? null : courseName,
+        isCompany ? null : companyName,
+        userName,
+        teacherLmsUserId,
+        Constants.CODE_VAL_ROLL_STUDENT,
+        Constants.DB_FLG_FALSE,
+        companyId,
+        pastFlg,
+        cutoffDate);
+
+
 	}
 
 	/**
@@ -1113,178 +1160,166 @@ public class StudentAttendanceService {
 		return true;
 	}
 
+	/**
+	 * Task.58 勤怠一括登録処理
+	 *
+	 * @param bulkRegistForm 勤怠一括登録フォーム
+	 * @return 完了メッセージ
+	 * @throws ParseException 日付変換時の例外
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public String bulkUpdate(BulkRegistForm bulkRegistForm)
+			throws ParseException {
 
-/**
- * Task.58 勤怠一括登録処理
- *
- * @param bulkRegistForm 勤怠一括登録フォーム
- * @return 完了メッセージ
- * @throws ParseException 日付変換時の例外
- */
-@Transactional(rollbackFor = Exception.class)
-public String bulkUpdate(BulkRegistForm bulkRegistForm)
-        throws ParseException {
+		// ① 勤怠情報（企業入力）リストを生成
+		List<TCompanyAttendance> companyAttendanceList = new ArrayList<>();
 
-    // ① 勤怠情報（企業入力）リストを生成
-    List<TCompanyAttendance> companyAttendanceList =
-            new ArrayList<>();
+		Date date = new Date();
 
-    Date date = new Date();
+		// ② 確定対象の日付インデックスを取得
+		Integer targetIndex = bulkRegistForm.getTargetIndex();
 
-    // ② 確定対象の日付インデックスを取得
-    Integer targetIndex = bulkRegistForm.getTargetIndex();
+		if (targetIndex == null
+				|| bulkRegistForm.getAttendanceList() == null
+				|| bulkRegistForm.getAttendanceList().isEmpty()) {
+			throw new IllegalArgumentException(
+					"確定対象の勤怠情報がありません。");
+		}
 
-    if (targetIndex == null
-            || bulkRegistForm.getAttendanceList() == null
-            || bulkRegistForm.getAttendanceList().isEmpty()) {
-        throw new IllegalArgumentException(
-                "確定対象の勤怠情報がありません。");
-    }
+		String target = String.valueOf(targetIndex);
 
-    String target = String.valueOf(targetIndex);
+		// ③ 勤怠リストの件数分繰り返す
+		for (DailyAttendanceForm daily : bulkRegistForm.getAttendanceList()) {
 
-    // ③ 勤怠リストの件数分繰り返す
-    for (DailyAttendanceForm daily
-            : bulkRegistForm.getAttendanceList()) {
+			if (daily == null) {
+				throw new IllegalArgumentException(
+						"勤怠情報が不正です。");
+			}
 
-        if (daily == null) {
-            throw new IllegalArgumentException(
-                    "勤怠情報が不正です。");
-        }
+			// 確定対象の日付のみ処理
+			if (!target.equals(daily.getIndex())) {
+				continue;
+			}
 
-        // 確定対象の日付のみ処理
-        if (!target.equals(daily.getIndex())) {
-            continue;
-        }
+			TCompanyAttendance attendance;
 
-        TCompanyAttendance attendance;
+			// ④ 企業入力勤怠情報IDが設定されている場合
+			if (daily.getCompanyAttendanceId() != null) {
 
-        // ④ 企業入力勤怠情報IDが設定されている場合
-        if (daily.getCompanyAttendanceId() != null) {
+				// 既存の勤怠情報を取得
+				attendance = tCompanyAttendanceMapper
+						.findByCompanyAttendanceId(
+								daily.getCompanyAttendanceId(),
+								Constants.DB_FLG_FALSE);
 
-            // 既存の勤怠情報を取得
-            attendance =
-                    tCompanyAttendanceMapper
-                            .findByCompanyAttendanceId(
-                                    daily.getCompanyAttendanceId(),
-                                    Constants.DB_FLG_FALSE);
+				if (attendance == null) {
+					throw new IllegalStateException(
+							"更新対象の勤怠情報が存在しません。");
+				}
 
-            if (attendance == null) {
-                throw new IllegalStateException(
-                        "更新対象の勤怠情報が存在しません。");
-            }
+			} else {
 
-        } else {
+				// ⑤ 新規登録の場合
+				attendance = new TCompanyAttendance();
 
-            // ⑤ 新規登録の場合
-            attendance = new TCompanyAttendance();
+				attendance.setLmsUserId(
+						Integer.valueOf(daily.getLmsUserId()));
 
-            attendance.setLmsUserId(
-                    Integer.valueOf(daily.getLmsUserId()));
+				attendance.setTrainingDate(
+						dateUtil.parse(daily.getTrainingDate()));
 
-            attendance.setTrainingDate(
-                    dateUtil.parse(daily.getTrainingDate()));
+				attendance.setAccountId(
+						loginUserDto.getAccountId());
 
-            attendance.setAccountId(
-                    loginUserDto.getAccountId());
+				attendance.setDeleteFlg(
+						Constants.DB_FLG_FALSE);
 
-            attendance.setDeleteFlg(
-                    Constants.DB_FLG_FALSE);
+				attendance.setFirstCreateUser(
+						loginUserDto.getLmsUserId());
 
-            attendance.setFirstCreateUser(
-                    loginUserDto.getLmsUserId());
+				attendance.setFirstCreateDate(date);
+			}
 
-            attendance.setFirstCreateDate(date);
-        }
+			// ⑥ 出退勤時間・勤怠ステータスを設定
+			boolean isAbsent = Boolean.TRUE.equals(daily.getIsAbsent());
 
-        // ⑥ 出退勤時間・勤怠ステータスを設定
-        boolean isAbsent =
-                Boolean.TRUE.equals(daily.getIsAbsent());
+			if (isAbsent) {
 
-        if (isAbsent) {
+				// 欠席の場合
+				attendance.setTrainingStartTime("");
+				attendance.setTrainingEndTime("");
 
-            // 欠席の場合
-            attendance.setTrainingStartTime("");
-            attendance.setTrainingEndTime("");
+				attendance.setStatus(
+						AttendanceStatusEnum.ABSENT.code);
 
-            attendance.setStatus(
-                    AttendanceStatusEnum.ABSENT.code);
+			} else {
 
-        } else {
+				TrainingTime startTime = new TrainingTime(
+						daily.getTrainingStartTime());
 
-            TrainingTime startTime = new TrainingTime(
-                    daily.getTrainingStartTime());
+				TrainingTime endTime = new TrainingTime(
+						daily.getTrainingEndTime());
 
-            TrainingTime endTime = new TrainingTime(
-                    daily.getTrainingEndTime());
+				attendance.setTrainingStartTime(
+						startTime.getFormattedString());
 
-            attendance.setTrainingStartTime(
-                    startTime.getFormattedString());
+				attendance.setTrainingEndTime(
+						endTime.getFormattedString());
 
-            attendance.setTrainingEndTime(
-                    endTime.getFormattedString());
+				// 勤怠Utilから勤怠状態を取得
+				AttendanceStatusEnum status = attendanceUtil.getStatus(
+						startTime, endTime);
 
-            // 勤怠Utilから勤怠状態を取得
-            AttendanceStatusEnum status =
-                    attendanceUtil.getStatus(
-                            startTime, endTime);
+				if (status == null) {
+					throw new IllegalStateException(
+							"勤怠状態を判定できません。");
+				}
 
-            if (status == null) {
-                throw new IllegalStateException(
-                        "勤怠状態を判定できません。");
-            }
+				attendance.setStatus(status.code);
+			}
 
-            attendance.setStatus(status.code);
-        }
+			// ⑦ 最終更新者・最終更新日時を設定
+			attendance.setLastModifiedUser(
+					loginUserDto.getLmsUserId());
 
-        // ⑦ 最終更新者・最終更新日時を設定
-        attendance.setLastModifiedUser(
-                loginUserDto.getLmsUserId());
+			attendance.setLastModifiedDate(date);
 
-        attendance.setLastModifiedDate(date);
+			// ⑧ 勤怠情報リストに追加
+			companyAttendanceList.add(attendance);
+		}
 
-        // ⑧ 勤怠情報リストに追加
-        companyAttendanceList.add(attendance);
-    }
+		// 確定対象がない場合
+		if (companyAttendanceList.isEmpty()) {
+			throw new IllegalArgumentException(
+					"確定対象の勤怠情報がありません。");
+		}
 
-    // 確定対象がない場合
-    if (companyAttendanceList.isEmpty()) {
-        throw new IllegalArgumentException(
-                "確定対象の勤怠情報がありません。");
-    }
+		// ⑨ 勤怠情報（企業入力）を登録・更新
+		for (TCompanyAttendance attendance : companyAttendanceList) {
 
-    // ⑨ 勤怠情報（企業入力）を登録・更新
-    for (TCompanyAttendance attendance
-            : companyAttendanceList) {
+			Boolean updateResult;
 
-        Boolean updateResult;
+			if (attendance.getCompanyAttendanceId() != null) {
 
-        if (attendance.getCompanyAttendanceId() != null) {
+				// UPDATE
+				updateResult = tCompanyAttendanceMapper.update(attendance);
 
-            // UPDATE
-            updateResult =
-                    tCompanyAttendanceMapper.update(attendance);
+			} else {
 
-        } else {
+				// INSERT
+				updateResult = tCompanyAttendanceMapper.insert(attendance);
+			}
 
-            // INSERT
-            updateResult =
-                    tCompanyAttendanceMapper.insert(attendance);
-        }
+			if (!Boolean.TRUE.equals(updateResult)) {
+				throw new IllegalStateException(
+						"勤怠情報の登録・更新に失敗しました。");
+			}
+		}
 
-        if (!Boolean.TRUE.equals(updateResult)) {
-            throw new IllegalStateException(
-                    "勤怠情報の登録・更新に失敗しました。");
-        }
-    }
-
-    // ⑩ 完了メッセージ
-    return messageUtil.getMessage(
-            "regist.complete",
-            new String[] { "勤怠情報" });
-}
-
-
-
+		// ⑩ 完了メッセージ
+		return messageUtil.getMessage(
+				"regist.complete",
+				new String[] { "勤怠情報" });
+	}
 
 }

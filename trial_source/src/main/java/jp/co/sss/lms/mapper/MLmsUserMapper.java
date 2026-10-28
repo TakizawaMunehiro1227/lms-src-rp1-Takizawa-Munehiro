@@ -30,15 +30,21 @@ public interface MLmsUserMapper {
 	 *
 	 * @return ユーザー基本情報DTOリスト
 	 */
-	List<UserDetailDto> getUserDetailForSearch(
-			@Param("courseName") String courseName,
-			@Param("companyName") String companyName,
-			@Param("userName") String userName,
-			@Param("teacherLmsUserId") Integer teacherLmsUserId,
-			@Param("role") String role,
-			@Param("deleteFlg") Short deleteFlg);
-	
+
+
+List<UserDetailDto> getUserDetailForSearch(
+        @Param("courseName") String courseName,
+        @Param("companyName") String companyName,
+        @Param("userName") String userName,
+        @Param("teacherLmsUserId") Integer teacherLmsUserId,
+        @Param("role") String role,
+        @Param("deleteFlg") Short deleteFlg,
+        @Param("companyId") Integer companyId,
+        @Param("pastFlg") int pastFlg,
+        @Param("cutoffDate") java.sql.Date cutoffDate);
+
+
 	List<String> getPlaceNamesByLmsUserId(
-	        @Param("lmsUserId") Integer lmsUserId);
+			@Param("lmsUserId") Integer lmsUserId);
 
 }

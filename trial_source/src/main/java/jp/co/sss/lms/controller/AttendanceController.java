@@ -20,6 +20,8 @@ import jp.co.sss.lms.form.AttendanceSearchForm;
 import jp.co.sss.lms.form.BulkRegistForm;
 import jp.co.sss.lms.service.StudentAttendanceService;
 import jp.co.sss.lms.util.Constants;
+import jp.co.sss.lms.util.LoginUserUtil;
+import jp.co.sss.lms.util.MessageUtil;
 
 /**
  * 勤怠管理コントローラ
@@ -34,8 +36,14 @@ public class AttendanceController {
 	private StudentAttendanceService studentAttendanceService;
 	@Autowired
 	private LoginUserDto loginUserDto;
-	
-	
+
+	// Task71：ログインユーザーの権限判定
+	@Autowired
+	private LoginUserUtil loginUserUtil;
+
+	// Task71：設定値取得
+	@Autowired
+	private MessageUtil messageUtil;
 
 	/**
 	 * 勤怠管理画面 初期表示
@@ -82,7 +90,6 @@ public class AttendanceController {
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
-		
 
 		return "attendance/detail";
 	}
@@ -108,7 +115,6 @@ public class AttendanceController {
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
-		
 
 		return "attendance/detail";
 	}
@@ -144,108 +150,125 @@ public class AttendanceController {
 	 */
 	@RequestMapping(path = "/update", params = "complete", method = RequestMethod.POST)
 	public String complete(@ModelAttribute("attendanceForm") AttendanceForm attendanceForm,
-	        BindingResult result,Model model) throws ParseException {
+			BindingResult result, Model model) throws ParseException {
 
 		// Task27 入力チェック
 		if (!result.hasErrors()) {
-		    studentAttendanceService.updateInputCheck(attendanceForm, result);
+			studentAttendanceService.updateInputCheck(attendanceForm, result);
 		}
 
-	    // 入力エラーがある場合
-	    if (result.hasErrors()) {
+		// 入力エラーがある場合
+		if (result.hasErrors()) {
 
-	        // 時間などの選択肢を再設定
-	        List<AttendanceManagementDto> list =
-	                studentAttendanceService.getAttendanceManagement(
-	                        loginUserDto.getCourseId(),
-	                        loginUserDto.getLmsUserId());
+			// 時間などの選択肢を再設定
+			List<AttendanceManagementDto> list = studentAttendanceService.getAttendanceManagement(
+					loginUserDto.getCourseId(),
+					loginUserDto.getLmsUserId());
 
-	        AttendanceForm options =
-	                studentAttendanceService.setAttendanceForm(list);
+			AttendanceForm options = studentAttendanceService.setAttendanceForm(list);
 
-	        attendanceForm.setHourTimes(options.getHourTimes());
-	        attendanceForm.setMinuteTimes(options.getMinuteTimes());
-	        attendanceForm.setBlankTimes(options.getBlankTimes());
+			attendanceForm.setHourTimes(options.getHourTimes());
+			attendanceForm.setMinuteTimes(options.getMinuteTimes());
+			attendanceForm.setBlankTimes(options.getBlankTimes());
 
-	        model.addAttribute("attendanceForm", attendanceForm);
+			model.addAttribute("attendanceForm", attendanceForm);
 
-	        return "attendance/update";
-	    }
+			return "attendance/update";
+		}
 
-	    // Task26 時刻の形式変換
-	    studentAttendanceService.formatConversion(attendanceForm);
+		// Task26 時刻の形式変換
+		studentAttendanceService.formatConversion(attendanceForm);
 
-	    // 更新
-	    String message = studentAttendanceService.update(attendanceForm);
-	    model.addAttribute("message", message);
+		// 更新
+		String message = studentAttendanceService.update(attendanceForm);
+		model.addAttribute("message", message);
 
-	    // 一覧の再取得
-	    List<AttendanceManagementDto> attendanceManagementDtoList =
-	            studentAttendanceService.getAttendanceManagement(
-	                    loginUserDto.getCourseId(),
-	                    loginUserDto.getLmsUserId());
+		// 一覧の再取得
+		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService.getAttendanceManagement(
+				loginUserDto.getCourseId(),
+				loginUserDto.getLmsUserId());
 
-	    model.addAttribute("attendanceManagementDtoList",
-	            attendanceManagementDtoList);
+		model.addAttribute("attendanceManagementDtoList",
+				attendanceManagementDtoList);
 
-	    return "attendance/detail";
+		return "attendance/detail";
 	}
-	
-	  /**
-     * 初期表示・検索処理  
-     *@author 瀧澤：Task.57 勤怠情報確認（受講生一覧）
-     * @param attendanceSearchForm 勤怠検索フォーム
-     * @param model モデル
-     * @return 勤怠情報確認画面
-     */
-	
+
+	/**
+	 * 勤怠情報確認（受講生一覧）初期表示・検索処理
+	 *
+	 * Task57：講師向け機能
+	 * Task71：企業担当者向け機能
+	 *
+	 * @param attendanceSearchForm 勤怠検索フォーム
+	 * @param model モデル
+	 * @return 勤怠情報確認画面
+	 */
 	@RequestMapping("/list")
-	public String list(@ModelAttribute("attendanceSearchForm")AttendanceSearchForm attendanceSearchForm,Model model) {
+	public String list(@ModelAttribute("attendanceSearchForm") AttendanceSearchForm attendanceSearchForm, Model model) {
 
-	    // ① 受講生情報一覧取得
-	    List<UserDetailDto> userDetailDtoList =studentAttendanceService.getAttendanceDetailDtoList(attendanceSearchForm);
+		// ① Task71：企業担当者か判定
+		boolean isCompany = loginUserUtil.isCompany();
 
-	    // ② ログインユーザーの担当会場名を取得
-	    String placeName =studentAttendanceService.getLoginUserPlaceName();
+		// ② Task71：画面表示条件を設定
+		model.addAttribute("showPastFlg", isCompany);
 
-	    // ③ 受講生情報一覧をModelに設定
-	    model.addAttribute("userDetailDtoList", userDetailDtoList);
+		// Task71：設定期間の表示文字列を取得
+		String pastTimeLabel =messageUtil.getMessage("setting.search.pastTimeLabel");
 
-	    // ④ 会場名をModelに設定
-	    model.addAttribute("placeName", placeName);
+		// 画面に設定
+		model.addAttribute("pastTimeLabel", pastTimeLabel);
 
-	    // ⑤ 勤怠情報確認（受講生一覧）画面を表示
-	    return "attendance/list";
+		// ④ Task71：企業担当者以外は経過フラグを使用しない
+		if (!isCompany) {
+			attendanceSearchForm.setPastFlg(0);
+		}
+
+		// ⑤ 受講生情報一覧取得
+		List<UserDetailDto> userDetailDtoList = studentAttendanceService
+				.getAttendanceDetailDtoList(attendanceSearchForm);
+
+		// ⑥ 企業担当者以外は既存の会場名取得処理を維持
+		if (!isCompany) {
+			String placeName = studentAttendanceService.getLoginUserPlaceName();
+
+			model.addAttribute("placeName", placeName);
+		}
+
+		// ⑦ 受講生情報一覧をModelに設定
+		model.addAttribute("userDetailDtoList", userDetailDtoList);
+
+		// ⑧ 勤怠情報確認（受講生一覧）画面を表示
+		return "attendance/list";
 	}
-	
 
-/**
- * Task.58 勤怠一括登録画面 初期表示
- */
-@RequestMapping(path = "/bulkRegist",method = RequestMethod.GET)
-public String bulkRegist(@ModelAttribute("bulkRegistForm")BulkRegistForm bulkRegistForm,Model model) throws ParseException {
+	/**
+	 * Task.58 勤怠一括登録画面 初期表示
+	 */
+	@RequestMapping(path = "/bulkRegist", method = RequestMethod.GET)
+	public String bulkRegist(@ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm, Model model)
+			throws ParseException {
 
-    // ① 会場情報の設定
-    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+		// ① 会場情報の設定
+		studentAttendanceService.setBulkRegistForm(bulkRegistForm);
 
-    // ② 確定後、検索条件がある場合は再検索
-    if (bulkRegistForm.getSearchPeriodFrom() != null
-            && !bulkRegistForm.getSearchPeriodFrom().isBlank()
-            && bulkRegistForm.getSearchPeriodTo() != null
-            && !bulkRegistForm.getSearchPeriodTo().isBlank()) {
+		// ② 確定後、検索条件がある場合は再検索
+		if (bulkRegistForm.getSearchPeriodFrom() != null
+				&& !bulkRegistForm.getSearchPeriodFrom().isBlank()
+				&& bulkRegistForm.getSearchPeriodTo() != null
+				&& !bulkRegistForm.getSearchPeriodTo().isBlank()) {
 
-        studentAttendanceService.getUserAttendance(
-                bulkRegistForm);
-    }
+			studentAttendanceService.getUserAttendance(
+					bulkRegistForm);
+		}
 
-    // ③ フォームをModelに設定
-    model.addAttribute("bulkRegistForm", bulkRegistForm);
+		// ③ フォームをModelに設定
+		model.addAttribute("bulkRegistForm", bulkRegistForm);
 
-    // ④ 勤怠一括登録画面を表示
-    return "attendance/bulkRegist";
-}
+		// ④ 勤怠一括登録画面を表示
+		return "attendance/bulkRegist";
+	}
 
-	
 	/**
 	 * Task.58 勤怠一括登録画面
 	 * 検索ボタン押下処理
@@ -258,26 +281,26 @@ public String bulkRegist(@ModelAttribute("bulkRegistForm")BulkRegistForm bulkReg
 	 */
 	@RequestMapping(path = "/bulkRegist/search", method = RequestMethod.POST)
 	public String bulkRegistSearch(@ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
-	        BindingResult result,Model model) throws ParseException {
+			BindingResult result, Model model) throws ParseException {
 
-	    // ① Task.58 会場情報の設定
-	    studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+		// ① Task.58 会場情報の設定
+		studentAttendanceService.setBulkRegistForm(bulkRegistForm);
 
-	    // ② Task.58 検索時の入力チェック
-	    studentAttendanceService.searchInputCheck(bulkRegistForm, result);
+		// ② Task.58 検索時の入力チェック
+		studentAttendanceService.searchInputCheck(bulkRegistForm, result);
 
-	    // ③ 入力エラーがある場合
-	    if (result.hasErrors()) {
-	        return "attendance/bulkRegist";
-	    }
+		// ③ 入力エラーがある場合
+		if (result.hasErrors()) {
+			return "attendance/bulkRegist";
+		}
 
-	    // ④ Task.58 ユーザー勤怠情報の取得
-	    studentAttendanceService.getUserAttendance(bulkRegistForm);
+		// ④ Task.58 ユーザー勤怠情報の取得
+		studentAttendanceService.getUserAttendance(bulkRegistForm);
 
-	    // ⑤ 勤怠一括登録画面を表示
-	    return "attendance/bulkRegist";
+		// ⑤ 勤怠一括登録画面を表示
+		return "attendance/bulkRegist";
 	}
-	
+
 	/**
 	 * Task.58 勤怠一括登録画面
 	 * 『確定する』ボタン押下処理
@@ -290,28 +313,26 @@ public String bulkRegist(@ModelAttribute("bulkRegistForm")BulkRegistForm bulkReg
 	 */
 	@RequestMapping(path = "/bulkRegist/complete", method = RequestMethod.POST)
 	public String bulkRegistComplete(@ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
-	        BindingResult result,RedirectAttributes redirectAttributes) throws ParseException {
+			BindingResult result, RedirectAttributes redirectAttributes) throws ParseException {
 
-	    // ① 入力チェック
-	    studentAttendanceService.bulkRegistInputCheck(bulkRegistForm, result);
+		// ① 入力チェック
+		studentAttendanceService.bulkRegistInputCheck(bulkRegistForm, result);
 
-	    // ② エラーがある場合
-	    if (result.hasErrors()) {
-	        studentAttendanceService.setBulkRegistForm(bulkRegistForm);
-	        return "attendance/bulkRegist";
-	    }
+		// ② エラーがある場合
+		if (result.hasErrors()) {
+			studentAttendanceService.setBulkRegistForm(bulkRegistForm);
+			return "attendance/bulkRegist";
+		}
 
-	    // ③ 一括登録処理
-	    String message = studentAttendanceService.bulkUpdate(bulkRegistForm);
+		// ③ 一括登録処理
+		String message = studentAttendanceService.bulkUpdate(bulkRegistForm);
 
-	    // ④ 完了メッセージを設定
-	    redirectAttributes.addFlashAttribute("message", message);
-	    redirectAttributes.addFlashAttribute("bulkRegistForm", bulkRegistForm);
+		// ④ 完了メッセージを設定
+		redirectAttributes.addFlashAttribute("message", message);
+		redirectAttributes.addFlashAttribute("bulkRegistForm", bulkRegistForm);
 
-	    // ⑤ 再表示
-	    return "redirect:/attendance/bulkRegist";
+		// ⑤ 再表示
+		return "redirect:/attendance/bulkRegist";
 	}
-	
-
 
 }

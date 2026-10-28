@@ -79,6 +79,23 @@
 		AND t1.role = #{role}
 
 
+		<!-- Task71：企業担当者の場合、所属企業の受講生のみ取得 -->
+		<if test="companyId != null">
+			AND t3.company_id = #{companyId}
+		</if>
+
+
+		<!-- Task71：経過フラグOFFの場合、期間超過者を除外 -->
+		<if test="cutoffDate != null">
+			AND (
+			t6.close_time IS NULL
+			OR t6.close_time >= #{cutoffDate}
+			)
+		</if>
+
+
+
+
 		<!-- 講師の場合、担当会場の受講生に限定 -->
 		<if test="teacherLmsUserId != null">
 			AND EXISTS (
@@ -119,7 +136,8 @@
 
 		FROM t_user_place up
 
-		INNER JOIN m_place p
+		INNER JOIN
+		m_place p
 		ON up.place_id = p.place_id
 
 		WHERE
