@@ -88,8 +88,7 @@ public class UserService {
 	}
 
 	/**
-	 * 瀧澤-Task72
-	 * LMSユーザー基本情報取得
+	 * @author 瀧澤-Task72 LMSユーザー基本情報取得
 	 *
 	 * @param lmsUserId LMSユーザーID
 	 * @return ユーザー基本情報DTO

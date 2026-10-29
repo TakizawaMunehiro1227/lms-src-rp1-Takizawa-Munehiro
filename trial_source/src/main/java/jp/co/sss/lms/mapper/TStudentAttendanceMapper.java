@@ -65,9 +65,9 @@ public interface TStudentAttendanceMapper {
 	 */
 	Boolean update(TStudentAttendance tStudentAttendance);
     
-	//瀧澤-Task25
+
 	/**
-	 * Task25 過去日の出席未入力件数を取得
+	 *@author 瀧澤 Task25 過去日の出席未入力件数を取得
 	 *
 	 * @param lmsUserId LMSユーザーID
 	 * @param deleteFlg 削除フラグ

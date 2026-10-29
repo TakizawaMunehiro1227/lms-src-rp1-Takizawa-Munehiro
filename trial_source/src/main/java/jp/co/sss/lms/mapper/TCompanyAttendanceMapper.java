@@ -8,7 +8,7 @@ import jp.co.sss.lms.entity.TCompanyAttendance;
 @Mapper
 public interface TCompanyAttendanceMapper {
 	/**
-	 * Task.58 勤怠情報（企業入力）取得（企業入力勤怠情報ID）
+	 * @author 瀧澤-Task.58 勤怠情報（企業入力）取得（企業入力勤怠情報ID）
 	 * 
 	 * @param companyAttendanceId
 	 * @param deleteFlg
@@ -19,7 +19,7 @@ public interface TCompanyAttendanceMapper {
 			@Param("deleteFlg") Short deleteFlg);
 
 	/**
-	 * Task.58 勤怠情報（企業入力）登録
+	 * @author 瀧澤-Task.58 勤怠情報（企業入力）登録
 	 * 
 	 * @param tCompanyAttendance
 	 * @return 登録結果
@@ -27,7 +27,7 @@ public interface TCompanyAttendanceMapper {
 	Boolean insert(TCompanyAttendance tCompanyAttendance);
 
 	/**
-	 * Task.58 勤怠情報（企業入力）更新
+	 *@author 瀧澤-Task.58 勤怠情報（企業入力）更新
 	 * 
 	 * @param tCompanyAttendance
 	 * @return 更新結果

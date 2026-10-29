@@ -11,14 +11,14 @@ import jp.co.sss.lms.dto.UserAttendanceDto;
 
 /**
  * 会場マスタMapper
- *@author 瀧澤：Task.58 勤怠一括登録画面
+ *@author 瀧澤：-Task.58 勤怠一括登録画面
  * 
  */
 @Mapper
 public interface MPlaceMapper {
 
     /**
-     * 会場IDによる会場情報取得
+     * @author 瀧澤-Task.58 会場IDによる会場情報取得
      *
      * @param placeId 会場ID
      * @param hiddenFlg 非表示フラグ
@@ -31,7 +31,7 @@ public interface MPlaceMapper {
             @Param("deleteFlg") Short deleteFlg);
 
     /**
-     * Task.58 ユーザー勤怠情報DTO取得
+     * @author 瀧澤-Task.58 ユーザー勤怠情報DTO取得
      *
      * @param placeId 会場ID
      * @param from 検索開始日

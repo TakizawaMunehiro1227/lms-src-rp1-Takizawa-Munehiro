@@ -26,6 +26,7 @@ public interface MLmsUserMapper {
 			@Param("deleteFlg") Short deleteFlg);
 
 	/**
+	 * @author 瀧澤
 	 * Task.57 受講生情報一覧取得
 	 *
 	 * @return ユーザー基本情報DTOリスト
