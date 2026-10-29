@@ -7,7 +7,7 @@
 </head>
 
 <body>
-	<!-- Task.58 勤怠一括登録画面 -->
+	<!-- 瀧澤　Task.58 勤怠一括登録画面 -->
 	<script th:src="@{/js/companyAttendance.js}"></script>
 	<h2>勤怠一括登録</h2>
 
@@ -83,8 +83,7 @@
 									受講生が入力した時刻をコピーする
 								</button>
 							</th>
-							<td>
-								<!-- Serviceの確定処理が完成するまでは無効 -->
+							<td>								
 								<input type="submit" name="complete" value="確定する" class="btn btn-info"
 									th:attr="onclick='return setTargetIndex(' + ${daily.index} + ');'">
 							</td>

@@ -424,7 +424,6 @@ public class StudentAttendanceService {
 	public void formatConversion(AttendanceForm attendanceForm) {
 
 		for (DailyAttendanceForm dailyAttendanceForm : attendanceForm.getAttendanceList()) {
-
 			// 出勤時間の変換
 			Integer startHour = dailyAttendanceForm.getTrainingStartTimeHour();
 			Integer startMinute = dailyAttendanceForm.getTrainingStartTimeMinute();
@@ -434,7 +433,6 @@ public class StudentAttendanceService {
 			} else {
 				dailyAttendanceForm.setTrainingStartTime("");
 			}
-
 			// 退勤時間の変換
 			Integer endHour = dailyAttendanceForm.getTrainingEndTimeHour();
 			Integer endMinute = dailyAttendanceForm.getTrainingEndTimeMinute();
@@ -720,7 +718,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task.58 ユーザー勤怠情報の取得
+	 * @author 瀧澤 Task.58 ユーザー勤怠情報の取得
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 * @throws ParseException 日付変換時の例外
@@ -810,7 +808,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task.58 コピー用時刻の15分単位調整
+	 * @author 瀧澤　Task.58 コピー用時刻の15分単位調整
 	 *
 	 * @param time 受講生が入力した時刻
 	 * @param isStart true：出勤、false：退勤
@@ -849,11 +847,13 @@ public class StudentAttendanceService {
 		if (isStart) {
 			// 出勤：15分単位で切り上げ、09:00以降
 			roundedMinutes = ((totalMinutes + 14) / 15) * 15;
-			roundedMinutes = Math.max(roundedMinutes, 9 * 60);
+			   int workStartMinutes = Constants.SSS_WORK_START_TIME.getHour() * 60+ Constants.SSS_WORK_START_TIME.getMinute();
+               roundedMinutes = Math.max(roundedMinutes, workStartMinutes);
 		} else {
 			// 退勤：15分単位で切り下げ、18:00以前
 			roundedMinutes = (totalMinutes / 15) * 15;
-			roundedMinutes = Math.min(roundedMinutes, 18 * 60);
+			int workEndMinutes = Constants.SSS_WORK_END_TIME.getHour() * 60+ Constants.SSS_WORK_END_TIME.getMinute();
+            roundedMinutes = Math.min(roundedMinutes, workEndMinutes);
 		}
 
 		return String.format("%02d:%02d",
@@ -861,7 +861,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task.58 勤怠一括登録 入力チェック
+	 * @author 瀧澤-Task.58 勤怠一括登録 入力チェック
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 * @param result 入力チェック結果
@@ -945,7 +945,7 @@ public class StudentAttendanceService {
 				continue;
 			}
 			// ⑧ 出勤時間・退勤時間の前後関係チェック
-			if (startMinutes >= endMinutes) {
+			if (startMinutes >=endMinutes) {
 				result.reject("attendance.trainingTimeRangeBulk",new Object[] { trainingDate },null);
 			}
 		}
