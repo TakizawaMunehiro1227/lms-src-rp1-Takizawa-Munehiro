@@ -77,9 +77,6 @@ public class StudentAttendanceService {
 	private MPlaceMapper mPlaceMapper;
 	@Autowired
 	private TCompanyAttendanceMapper tCompanyAttendanceMapper;
-	
-
-
 
 	/**
 	 * 勤怠一覧情報取得
@@ -421,7 +418,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task26 出退勤時間の形式変換
+	 *@author 瀧澤 Task26 出退勤時間の形式変換
 	 *
 	 * @param attendanceForm 勤怠フォーム
 	 */
@@ -434,8 +431,7 @@ public class StudentAttendanceService {
 			Integer startMinute = dailyAttendanceForm.getTrainingStartTimeMinute();
 
 			if (startHour != null && startMinute != null) {
-				dailyAttendanceForm.setTrainingStartTime(
-						String.format("%02d:%02d", startHour, startMinute));
+				dailyAttendanceForm.setTrainingStartTime(String.format("%02d:%02d", startHour, startMinute));
 			} else {
 				dailyAttendanceForm.setTrainingStartTime("");
 			}
@@ -445,8 +441,7 @@ public class StudentAttendanceService {
 			Integer endMinute = dailyAttendanceForm.getTrainingEndTimeMinute();
 
 			if (endHour != null && endMinute != null) {
-				dailyAttendanceForm.setTrainingEndTime(
-						String.format("%02d:%02d", endHour, endMinute));
+				dailyAttendanceForm.setTrainingEndTime(String.format("%02d:%02d", endHour, endMinute));
 			} else {
 				dailyAttendanceForm.setTrainingEndTime("");
 			}
@@ -454,7 +449,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task27 入力チェック
+	 * @author 瀧澤-Task27 入力チェック
 	 * @param attendanceForm
 	 * @param result
 	 */
@@ -469,15 +464,10 @@ public class StudentAttendanceService {
 			DailyAttendanceForm daily = list.get(i);
 
 			// 備考の文字数チェック
-			if (daily.getNote() != null
-					&& daily.getNote().length() > 100) {
+			if (daily.getNote() != null && daily.getNote().length() > 100) {
 
-				result.addError(new FieldError(
-						result.getObjectName(),
-						"attendanceList[" + i + "].note",
-						messageUtil.getMessage(
-								Constants.VALID_KEY_MAXLENGTH,
-								new String[] { "備考", "100" })));
+				result.addError(new FieldError(result.getObjectName(), "attendanceList[" + i + "].note",
+						messageUtil.getMessage(Constants.VALID_KEY_MAXLENGTH, new String[] { "備考", "100" })));
 			}
 
 			// 出勤時間の入力チェック
@@ -486,12 +476,9 @@ public class StudentAttendanceService {
 
 			if ((startHour == null) != (startMinute == null)) {
 
-				result.addError(new FieldError(
-						result.getObjectName(),
-						"attendanceList[" + i + "].trainingStartTimeHour",
-						messageUtil.getMessage(
-								Constants.INPUT_INVALID,
-								new String[] { "出勤時間" })));
+				result.addError(
+						new FieldError(result.getObjectName(), "attendanceList[" + i + "].trainingStartTimeHour",
+								messageUtil.getMessage(Constants.INPUT_INVALID, new String[] { "出勤時間" })));
 			}
 
 			// 退勤時間の入力チェック
@@ -501,45 +488,33 @@ public class StudentAttendanceService {
 			if ((endHour == null) != (endMinute == null)) {
 
 				result.addError(new FieldError(
-						result.getObjectName(),
-						"attendanceList[" + i + "].trainingEndTimeHour",
-						messageUtil.getMessage(
-								Constants.INPUT_INVALID,
-								new String[] { "退勤時間" })));
+						result.getObjectName(), "attendanceList[" + i + "].trainingEndTimeHour",
+						messageUtil.getMessage(Constants.INPUT_INVALID, new String[] { "退勤時間" })));
 			}
 
 			// 出勤時間が未入力で、退勤時間だけ入力されている場合
-			if (startHour == null && startMinute == null
-					&& endHour != null && endMinute != null) {
+			if (startHour == null && startMinute == null && endHour != null && endMinute != null) {
 
-				result.addError(new FieldError(
-						result.getObjectName(),
-						"attendanceList[" + i + "].trainingStartTimeHour",
-						messageUtil.getMessage(
-								Constants.VALID_KEY_ATTENDANCE_PUNCHINEMPTY)));
+				result.addError(
+						new FieldError(result.getObjectName(), "attendanceList[" + i + "].trainingStartTimeHour",
+								messageUtil.getMessage(Constants.VALID_KEY_ATTENDANCE_PUNCHINEMPTY)));
 			}
 
 			// 出勤時間が退勤時間より後になっている場合
-			if (startHour != null && startMinute != null
-					&& endHour != null && endMinute != null) {
+			if (startHour != null && startMinute != null && endHour != null && endMinute != null) {
 
 				int startTime = startHour * 60 + startMinute;
 				int endTime = endHour * 60 + endMinute;
 
 				if (startTime > endTime) {
 
-					result.addError(new FieldError(
-							result.getObjectName(),
-							"attendanceList[" + i + "].trainingEndTimeHour",
-							messageUtil.getMessage(
-									Constants.VALID_KEY_ATTENDANCE_TRAININGTIMERANGE,
-									new String[] { String.valueOf(i) })));
+					result.addError(new FieldError(result.getObjectName(), "attendanceList[" + i + "].trainingEndTimeHour",
+									messageUtil.getMessage(Constants.VALID_KEY_ATTENDANCE_TRAININGTIMERANGE,new String[] { String.valueOf(i) })));
 				}
 			}
 
 			// 中抜け時間が勤務時間を超えていないかチェック
-			if (startHour != null && startMinute != null
-					&& endHour != null && endMinute != null
+			if (startHour != null && startMinute != null && endHour != null && endMinute != null
 					&& daily.getBlankTime() != null) {
 
 				// 出勤時間と退勤時間を分に変換
@@ -552,11 +527,8 @@ public class StudentAttendanceService {
 				// 中抜け時間が勤務時間を超えている場合
 				if (workTime >= 0 && daily.getBlankTime() > workTime) {
 
-					result.addError(new FieldError(
-							result.getObjectName(),
-							"attendanceList[" + i + "].blankTime",
-							messageUtil.getMessage(
-									Constants.VALID_KEY_ATTENDANCE_BLANKTIMEERROR)));
+					result.addError(new FieldError(result.getObjectName(), "attendanceList[" + i + "].blankTime",
+							messageUtil.getMessage(Constants.VALID_KEY_ATTENDANCE_BLANKTIMEERROR)));
 				}
 			}
 		}
@@ -564,7 +536,7 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * Task.57 受講生情報一覧取得
+	 * @author 瀧澤　Task.57 受講生情報一覧取得
 	 *
 	 * @param attendanceSearchForm 勤怠検索フォーム
 	 * @return ユーザー基本情報DTOリスト
@@ -579,70 +551,48 @@ public class StudentAttendanceService {
 
 		// Task71：企業担当者か判定
 		boolean isCompany = loginUserUtil.isCompany();
-
-
-	    // Task71：経過フラグを取得
-	    // 未チェック・未指定の場合は0として扱う
-	    int pastFlg = isCompany
-	            && Integer.valueOf(1).equals(
-	                    attendanceSearchForm.getPastFlg())
-	            ? 1 : 0;
-
-	    attendanceSearchForm.setPastFlg(pastFlg);
-
+		// Task71：経過フラグを取得
+		// 未チェック・未指定の場合は0として扱う
+		int pastFlg = isCompany && Integer.valueOf(1).equals(attendanceSearchForm.getPastFlg()) ? 1 : 0;
+		attendanceSearchForm.setPastFlg(pastFlg);
 
 		// Task71：企業担当者の場合は所属企業IDを取得
 		Integer companyId = null;
 		if (isCompany) {
 			companyId = loginUserDto.getCompanyId();
-
 			if (companyId == null) {
-				throw new IllegalStateException(
-						"ログインユーザーの企業IDが取得できません。");
+				throw new IllegalStateException("ログインユーザーの企業IDが取得できません。");
 			}
 		}
-		
-
-	    // Task71：期間超過を判定する基準日
-	    java.sql.Date cutoffDate = null;
-
-	    if (isCompany && pastFlg == 0) {
-
-	        // プロパティから設定期間を取得
-	        int pastTime = Integer.parseInt(
-	                messageUtil.getMessage("setting.search.pastTime"));
-
-	        // 設定期間を引いた基準日を計算
-	        cutoffDate = java.sql.Date.valueOf(
-	                LocalDate.now().minusMonths(pastTime));
-	    }
-
-
+		// Task71：期間超過を判定する基準日
+		java.sql.Date cutoffDate = null;
+		if (isCompany && pastFlg == 0) {
+			// プロパティから設定期間を取得
+			int pastTime = Integer.parseInt(messageUtil.getMessage("setting.search.pastTime"));
+			// 設定期間を引いた基準日を計算
+			cutoffDate = java.sql.Date.valueOf(LocalDate.now().minusMonths(pastTime));
+		}
 		// ② 講師権限の場合、LMSユーザーIDを設定
 		Integer teacherLmsUserId = null;
-
 		if (loginUserUtil.isTeacher()) {
 			teacherLmsUserId = loginUserDto.getLmsUserId();
 		}
-
 		// ③ 受講生情報一覧取得
-
-return mLmsUserMapper.getUserDetailForSearch(
-        isCompany ? null : courseName,
-        isCompany ? null : companyName,
-        userName,
-        teacherLmsUserId,
-        Constants.CODE_VAL_ROLL_STUDENT,
-        Constants.DB_FLG_FALSE,
-        companyId,
-        pastFlg,
-        cutoffDate);
-
+		return mLmsUserMapper.getUserDetailForSearch(
+				isCompany ? null : courseName,
+				isCompany ? null : companyName,
+				userName,
+				teacherLmsUserId,
+				Constants.CODE_VAL_ROLL_STUDENT,
+				Constants.DB_FLG_FALSE,
+				companyId,
+				pastFlg,
+				cutoffDate);
 
 	}
 
 	/**
-	 * ログインユーザーの担当会場名取得
+	 * @author 瀧澤-Task57 ログインユーザーの担当会場名取得
 	 *
 	 * @return 担当会場名
 	 */
@@ -652,24 +602,20 @@ return mLmsUserMapper.getUserDetailForSearch(
 		if (!loginUserUtil.isTeacher()) {
 			return "全会場";
 		}
-
 		// ① ログイン講師のLMSユーザーID取得
 		Integer lmsUserId = loginUserDto.getLmsUserId();
-
 		// ② 担当会場名をDBから取得
 		List<String> placeNames = mLmsUserMapper.getPlaceNamesByLmsUserId(lmsUserId);
-
 		// ③ 会場が登録されていない場合
 		if (placeNames.isEmpty()) {
 			return "担当会場未設定";
 		}
-
 		// ④ 会場名を返却
 		return String.join("、", placeNames);
 	}
 
 	/**
-	 * Task.58 勤怠一括登録フォームの初期設定
+	 *@author 瀧澤　 Task.58 勤怠一括登録フォームの初期設定
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 */
@@ -677,22 +623,17 @@ return mLmsUserMapper.getUserDetailForSearch(
 
 		// ① ログイン情報から会場IDを取得
 		Integer placeId = loginUserDto.getPlaceId();
-
 		// ② フォームに会場IDを設定
 		bulkRegistForm.setPlaceId(placeId);
-
 		// ③ 会場情報を取得
 		PlaceDto placeDto = placeService.findByPlaceId(placeId);
-
 		// ④ 会場情報が取得できない場合
 		if (placeDto == null || placeDto.getPlaceNote() == null) {
 			bulkRegistForm.setPlaceName(null);
 			return;
 		}
-
 		// ⑤ 備考から教室名を取得
 		String[] placeNotes = placeDto.getPlaceNote().split("\\$", -1);
-
 		// ⑥ 教室名が存在しない場合
 		if (placeNotes.length < 2 || placeNotes[1].isEmpty()) {
 			bulkRegistForm.setPlaceName(null);
@@ -700,14 +641,12 @@ return mLmsUserMapper.getUserDetailForSearch(
 		}
 
 		// ⑦ 会場名（教室名）の形式で設定
-		String placeName = placeDto.getPlaceName()
-				+ "（" + placeNotes[1] + "）";
-
+		String placeName = placeDto.getPlaceName()+ "（" + placeNotes[1] + "）";
 		bulkRegistForm.setPlaceName(placeName);
 	}
 
 	/**
-	 * Task.58 勤怠一括登録画面
+	 * @author 瀧澤-Task.58 勤怠一括登録画面
 	 * 検索時入力チェック
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
@@ -720,120 +659,63 @@ return mLmsUserMapper.getUserDetailForSearch(
 		if (result.hasErrors()) {
 			return;
 		}
-
 		// ② 検索期間を取得
 		String fromValue = bulkRegistForm.getSearchPeriodFrom();
 		String toValue = bulkRegistForm.getSearchPeriodTo();
-
 		// ③ 検索開始日の必須チェック
 		if (fromValue == null || fromValue.isBlank()) {
 
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodFrom",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_REQUIRED,
-							new String[] { "期間（From）" })));
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodFrom",
+					messageUtil.getMessage(Constants.VALID_KEY_REQUIRED,new String[] { "期間（From）" })));
 
 			return;
 		}
-
 		// ④ 検索終了日の必須チェック
 		if (toValue == null || toValue.isBlank()) {
 
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodTo",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_REQUIRED,
-							new String[] { "期間（To）" })));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodTo",
+					messageUtil.getMessage(Constants.VALID_KEY_REQUIRED,new String[] { "期間（To）" })));
 			return;
 		}
-
 		// ⑤ 日付形式チェック用フォーマッター
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd")
-				.withResolverStyle(ResolverStyle.STRICT);
-
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
 		LocalDate from;
 		LocalDate to;
-
 		// ⑥ 開始日の日付形式チェック
 		try {
 			from = LocalDate.parse(fromValue, formatter);
-
 		} catch (DateTimeParseException e) {
-
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodFrom",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_DATE,
-							new String[] { "期間（From）" })));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodFrom",
+					messageUtil.getMessage(Constants.VALID_KEY_DATE,new String[] { "期間（From）" })));
 			return;
 		}
-
 		// ⑦ 終了日の日付形式チェック
 		try {
 			to = LocalDate.parse(toValue, formatter);
-
 		} catch (DateTimeParseException e) {
-
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodTo",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_DATE,
-							new String[] { "期間（To）" })));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodTo",
+					messageUtil.getMessage(Constants.VALID_KEY_DATE,new String[] { "期間（To）" })));
 			return;
 		}
 
 		// ⑧ 終了日がシステム日付より未来の場合
 		if (to.isAfter(LocalDate.now())) {
-
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodTo",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_SEARCHTORANGEERROR,
-							new String[] { "期間（To）" })));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodTo",
+					messageUtil.getMessage(Constants.VALID_KEY_SEARCHTORANGEERROR,new String[] { "期間（To）" })));
 			return;
 		}
 
 		// ⑨ 開始日が終了日より後の場合
 		if (from.isAfter(to)) {
-
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodTo",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_SEARCHPERIODCOMPAREERROR,
-							new String[] {
-									"期間（To）",
-									"期間（From）"
-							})));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodTo",
+					messageUtil.getMessage(Constants.VALID_KEY_SEARCHPERIODCOMPAREERROR,new String[] {"期間（To）","期間（From）"})));
 			return;
 		}
-
 		// ⑩ 検索期間が30日を超えている場合
 		long days = ChronoUnit.DAYS.between(from, to) + 1;
-
 		if (days > 30) {
-
-			result.addError(new FieldError(
-					result.getObjectName(),
-					"searchPeriodTo",
-					messageUtil.getMessage(
-							Constants.VALID_KEY_SEARCHSETTINGOVER,
-							new String[] {
-									"検索期間",
-									"30日"
-							})));
-
+			result.addError(new FieldError(result.getObjectName(),"searchPeriodTo",
+					messageUtil.getMessage(Constants.VALID_KEY_SEARCHSETTINGOVER,new String[] {"検索期間","30日"})));
 			return;
 		}
 	}
@@ -882,8 +764,7 @@ return mLmsUserMapper.getUserDetailForSearch(
 			// 研修日付
 			String trainingDate = dateUtil.toString(dto.getTrainingDate());
 			daily.setTrainingDate(trainingDate);
-			daily.setDispTrainingDate(
-					dateUtil.dateToString(dto.getTrainingDate(), "yyyy年M月d日(E)"));
+			daily.setDispTrainingDate(dateUtil.dateToString(dto.getTrainingDate(), "yyyy年M月d日(E)"));
 
 			// 日付ごとのインデックスを設定
 			if (!dateIndexMap.containsKey(trainingDate)) {
@@ -905,8 +786,7 @@ return mLmsUserMapper.getUserDetailForSearch(
 			// 中抜け時間
 			daily.setBlankTime(dto.getBlankTime());
 			if (dto.getBlankTime() != null) {
-				daily.setBlankTimeValue(
-						String.valueOf(attendanceUtil.calcBlankTime(dto.getBlankTime())));
+				daily.setBlankTimeValue(String.valueOf(attendanceUtil.calcBlankTime(dto.getBlankTime())));
 			}
 
 			// 勤怠ステータス
@@ -923,7 +803,6 @@ return mLmsUserMapper.getUserDetailForSearch(
 			daily.setTrainingStartTime("");
 			daily.setTrainingEndTime("");
 			daily.setIsAbsent(false);
-
 			attendanceList.add(daily);
 		}
 
@@ -994,11 +873,9 @@ return mLmsUserMapper.getUserDetailForSearch(
 
 		// ① 勤怠一覧と確定対象の日付インデックスを取得
 		List<DailyAttendanceForm> attendanceList = bulkRegistForm.getAttendanceList();
-
 		Integer targetIndex = bulkRegistForm.getTargetIndex();
 
-		if (attendanceList == null || attendanceList.isEmpty()
-				|| targetIndex == null) {
+		if (attendanceList == null || attendanceList.isEmpty()|| targetIndex == null) {
 			result.reject("haserror");
 			return;
 		}
@@ -1008,12 +885,10 @@ return mLmsUserMapper.getUserDetailForSearch(
 
 		// ② 確定対象の日付のみチェック
 		for (DailyAttendanceForm attendance : attendanceList) {
-
 			if (attendance == null) {
 				result.reject("haserror");
 				continue;
 			}
-
 			// 確定対象の日付以外は処理しない
 			if (!target.equals(attendance.getIndex())) {
 				continue;
@@ -1026,90 +901,53 @@ return mLmsUserMapper.getUserDetailForSearch(
 			String endTime = attendance.getTrainingEndTime();
 
 			boolean isAbsent = Boolean.TRUE.equals(attendance.getIsAbsent());
-
-			boolean hasStart = startTime != null
-					&& !startTime.trim().isEmpty();
-
-			boolean hasEnd = endTime != null
-					&& !endTime.trim().isEmpty();
+			boolean hasStart = startTime != null&& !startTime.trim().isEmpty();
+			boolean hasEnd = endTime != null&& !endTime.trim().isEmpty();
 
 			// ③ 欠席の場合
 			if (isAbsent) {
-
 				// 欠席なのに時刻が入力されている
 				if (hasStart || hasEnd) {
-					result.reject(
-							"absentAndTrainingTimeExistsBulk",
-							new Object[] { trainingDate },
-							null);
+					result.reject("absentAndTrainingTimeExistsBulk",new Object[] { trainingDate },null);
 				}
-
 				continue;
 			}
-
 			// ④ 出退勤時間が両方未入力
 			if (!hasStart && !hasEnd) {
-				result.reject(
-						"requiredTrainingTimeBulk",
-						new Object[] { trainingDate },
-						null);
+				result.reject("requiredTrainingTimeBulk",new Object[] { trainingDate },null);
 				continue;
 			}
-
 			// ⑤ 出退勤時間の片方が未入力
 			if (!hasStart || !hasEnd) {
-				result.reject(
-						"attendance.punchInEmptyBulk",
-						new Object[] { trainingDate },
-						null);
+				result.reject("attendance.punchInEmptyBulk",new Object[] { trainingDate },null);
 				continue;
 			}
-
 			// ⑥ 時刻形式チェック
 			Integer startMinutes = parseTimeMinutes(startTime);
 			Integer endMinutes = parseTimeMinutes(endTime);
 
 			if (startMinutes == null || endMinutes == null) {
-				result.reject(
-						"trainingTimeBulk",
-						new Object[] { trainingDate },
-						null);
+				result.reject("trainingTimeBulk",new Object[] { trainingDate },null);
 				continue;
 			}
-
 			// ⑦ 24:00を超えていないかチェック
 			boolean isOver24 = false;
 
 			if (startMinutes > 1440) {
-				result.reject(
-						"maxvalBulk",
-						new Object[] {
-								trainingDate, "出勤時間", "24:00"
-						},
-						null);
-				isOver24 = true;
+				result.reject("maxvalBulk",new Object[] {trainingDate, "出勤時間", "24:00"},null);isOver24 = true;
 			}
 
 			if (endMinutes > 1440) {
 				result.reject(
 						"maxvalBulk",
-						new Object[] {
-								trainingDate, "退勤時間", "24:00"
-						},
-						null);
-				isOver24 = true;
+						new Object[] {trainingDate, "退勤時間", "24:00"},null);isOver24 = true;
 			}
-
 			if (isOver24) {
 				continue;
 			}
-
 			// ⑧ 出勤時間・退勤時間の前後関係チェック
 			if (startMinutes >= endMinutes) {
-				result.reject(
-						"attendance.trainingTimeRangeBulk",
-						new Object[] { trainingDate },
-						null);
+				result.reject("attendance.trainingTimeRangeBulk",new Object[] { trainingDate },null);
 			}
 		}
 
@@ -1164,82 +1002,54 @@ return mLmsUserMapper.getUserDetailForSearch(
 	}
 
 	/**
-	 * Task.58 勤怠一括登録処理
+	 *@author 瀧澤 Task.58 勤怠一括登録処理
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 * @return 完了メッセージ
 	 * @throws ParseException 日付変換時の例外
 	 */
 	@Transactional(rollbackFor = Exception.class)
-	public String bulkUpdate(BulkRegistForm bulkRegistForm)
-			throws ParseException {
+	public String bulkUpdate(BulkRegistForm bulkRegistForm)throws ParseException {
 
 		// ① 勤怠情報（企業入力）リストを生成
 		List<TCompanyAttendance> companyAttendanceList = new ArrayList<>();
-
 		Date date = new Date();
-
 		// ② 確定対象の日付インデックスを取得
 		Integer targetIndex = bulkRegistForm.getTargetIndex();
-
-		if (targetIndex == null
-				|| bulkRegistForm.getAttendanceList() == null
-				|| bulkRegistForm.getAttendanceList().isEmpty()) {
-			throw new IllegalArgumentException(
-					"確定対象の勤怠情報がありません。");
+		if (targetIndex == null|| bulkRegistForm.getAttendanceList() == null|| bulkRegistForm.getAttendanceList().isEmpty()) {
+			throw new IllegalArgumentException("確定対象の勤怠情報がありません。");
 		}
-
 		String target = String.valueOf(targetIndex);
-
+		
 		// ③ 勤怠リストの件数分繰り返す
 		for (DailyAttendanceForm daily : bulkRegistForm.getAttendanceList()) {
-
 			if (daily == null) {
-				throw new IllegalArgumentException(
-						"勤怠情報が不正です。");
+				throw new IllegalArgumentException("勤怠情報が不正です。");
 			}
-
 			// 確定対象の日付のみ処理
 			if (!target.equals(daily.getIndex())) {
 				continue;
 			}
-
+			
 			TCompanyAttendance attendance;
 
 			// ④ 企業入力勤怠情報IDが設定されている場合
 			if (daily.getCompanyAttendanceId() != null) {
-
 				// 既存の勤怠情報を取得
-				attendance = tCompanyAttendanceMapper
-						.findByCompanyAttendanceId(
-								daily.getCompanyAttendanceId(),
-								Constants.DB_FLG_FALSE);
+				attendance = tCompanyAttendanceMapper.findByCompanyAttendanceId(daily.getCompanyAttendanceId(),Constants.DB_FLG_FALSE);
 
 				if (attendance == null) {
-					throw new IllegalStateException(
-							"更新対象の勤怠情報が存在しません。");
+					throw new IllegalStateException("更新対象の勤怠情報が存在しません。");
 				}
 
 			} else {
-
 				// ⑤ 新規登録の場合
 				attendance = new TCompanyAttendance();
-
-				attendance.setLmsUserId(
-						Integer.valueOf(daily.getLmsUserId()));
-
-				attendance.setTrainingDate(
-						dateUtil.parse(daily.getTrainingDate()));
-
-				attendance.setAccountId(
-						loginUserDto.getAccountId());
-
-				attendance.setDeleteFlg(
-						Constants.DB_FLG_FALSE);
-
-				attendance.setFirstCreateUser(
-						loginUserDto.getLmsUserId());
-
+				attendance.setLmsUserId(Integer.valueOf(daily.getLmsUserId()));
+				attendance.setTrainingDate(dateUtil.parse(daily.getTrainingDate()));
+				attendance.setAccountId(loginUserDto.getAccountId());
+				attendance.setDeleteFlg(Constants.DB_FLG_FALSE);
+				attendance.setFirstCreateUser(loginUserDto.getLmsUserId());
 				attendance.setFirstCreateDate(date);
 			}
 
@@ -1247,54 +1057,36 @@ return mLmsUserMapper.getUserDetailForSearch(
 			boolean isAbsent = Boolean.TRUE.equals(daily.getIsAbsent());
 
 			if (isAbsent) {
-
 				// 欠席の場合
 				attendance.setTrainingStartTime("");
 				attendance.setTrainingEndTime("");
-
-				attendance.setStatus(
-						AttendanceStatusEnum.ABSENT.code);
+				attendance.setStatus(AttendanceStatusEnum.ABSENT.code);
 
 			} else {
-
-				TrainingTime startTime = new TrainingTime(
-						daily.getTrainingStartTime());
-
-				TrainingTime endTime = new TrainingTime(
-						daily.getTrainingEndTime());
-
-				attendance.setTrainingStartTime(
-						startTime.getFormattedString());
-
-				attendance.setTrainingEndTime(
-						endTime.getFormattedString());
-
+				TrainingTime startTime = new TrainingTime(daily.getTrainingStartTime());
+				TrainingTime endTime = new TrainingTime(daily.getTrainingEndTime());
+				attendance.setTrainingStartTime(startTime.getFormattedString());
+				attendance.setTrainingEndTime(endTime.getFormattedString());
 				// 勤怠Utilから勤怠状態を取得
-				AttendanceStatusEnum status = attendanceUtil.getStatus(
-						startTime, endTime);
+				AttendanceStatusEnum status = attendanceUtil.getStatus(startTime, endTime);
 
 				if (status == null) {
-					throw new IllegalStateException(
-							"勤怠状態を判定できません。");
+					throw new IllegalStateException("勤怠状態を判定できません。");
 				}
 
 				attendance.setStatus(status.code);
 			}
 
 			// ⑦ 最終更新者・最終更新日時を設定
-			attendance.setLastModifiedUser(
-					loginUserDto.getLmsUserId());
-
+			attendance.setLastModifiedUser(loginUserDto.getLmsUserId());
 			attendance.setLastModifiedDate(date);
-
 			// ⑧ 勤怠情報リストに追加
 			companyAttendanceList.add(attendance);
 		}
 
 		// 確定対象がない場合
 		if (companyAttendanceList.isEmpty()) {
-			throw new IllegalArgumentException(
-					"確定対象の勤怠情報がありません。");
+			throw new IllegalArgumentException("確定対象の勤怠情報がありません。");
 		}
 
 		// ⑨ 勤怠情報（企業入力）を登録・更新
@@ -1303,26 +1095,20 @@ return mLmsUserMapper.getUserDetailForSearch(
 			Boolean updateResult;
 
 			if (attendance.getCompanyAttendanceId() != null) {
-
-				// UPDATE
+               // UPDATE
 				updateResult = tCompanyAttendanceMapper.update(attendance);
 
 			} else {
-
 				// INSERT
 				updateResult = tCompanyAttendanceMapper.insert(attendance);
 			}
 
 			if (!Boolean.TRUE.equals(updateResult)) {
-				throw new IllegalStateException(
-						"勤怠情報の登録・更新に失敗しました。");
+				throw new IllegalStateException("勤怠情報の登録・更新に失敗しました。");
 			}
 		}
-
 		// ⑩ 完了メッセージ
-		return messageUtil.getMessage(
-				"regist.complete",
-				new String[] { "勤怠情報" });
+		return messageUtil.getMessage("regist.complete",new String[] { "勤怠情報" });
 	}
 
 }

@@ -73,10 +73,8 @@ public class AttendanceController {
 	 * @throws ParseException
 	 */
 	@RequestMapping(path = "/detail", method = RequestMethod.GET)
-	public String index(
-			@RequestParam(value = "lmsUserId", required = false) Integer lmsUserId,
-			@RequestParam(value = "courseId", required = false) Integer courseId,
-			Model model) throws ParseException {
+	public String index(@RequestParam(value = "lmsUserId", required = false) Integer lmsUserId,
+			@RequestParam(value = "courseId", required = false) Integer courseId,Model model) throws ParseException {
 
 		// 瀧澤-Task72 受講生情報取得
 
@@ -96,24 +94,6 @@ public class AttendanceController {
 
 			// ユーザー基本情報取得
 			UserDetailDto userDetailDto = userService.getUserBasicInfo(lmsUserId);
-			
-
-			 // 瀧澤-Task72 動作確認
-			System.out.println("===== Task72 確認 =====");
-			System.out.println("courseId = " + courseId);
-			System.out.println("lmsUserId = " + lmsUserId);
-			System.out.println("isCompany = " + loginUserUtil.isCompany());
-			System.out.println("ログイン企業ID = " + loginUserDto.getCompanyId());
-
-			if (userDetailDto != null) {
-			    System.out.println("受講生企業ID = "
-			            + userDetailDto.getCompanyId());
-			    System.out.println("受講生コースID = "
-			            + userDetailDto.getCourseId());
-			} else {
-			    System.out.println("userDetailDto = null");
-			}
-
 
 			// 対象受講生の存在・コースIDを確認
 			if (userDetailDto == null
@@ -126,19 +106,15 @@ public class AttendanceController {
 			if (loginUserUtil.isCompany()) {
 
 				// ログイン企業と対象受講生の企業が一致するか確認
-				if (loginUserDto.getCompanyId() == null
-						|| !loginUserDto.getCompanyId()
-								.equals(userDetailDto.getCompanyId())) {
+				if (loginUserDto.getCompanyId() == null|| !loginUserDto.getCompanyId().equals(userDetailDto.getCompanyId())) {
 
-					throw new ResponseStatusException(
-							HttpStatus.FORBIDDEN);
+					throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 				}
 
 			} else {
 
 				// 講師等の閲覧権限は別途実装
-				throw new ResponseStatusException(
-						HttpStatus.FORBIDDEN);
+				throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 			}
 
 			// ユーザー基本情報DTOを画面に設定
@@ -147,12 +123,9 @@ public class AttendanceController {
 		} // 受講生権限の分岐終了
 
 		// 勤怠管理画面用DTOリスト取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService.getAttendanceManagement(
-				courseId, lmsUserId);
+		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService.getAttendanceManagement(courseId, lmsUserId);
 
-		model.addAttribute(
-				"attendanceManagementDtoList",
-				attendanceManagementDtoList);
+		model.addAttribute("attendanceManagementDtoList",attendanceManagementDtoList);
 
 		// 瀧澤-Task25 過去日の出席未入力チェック
 		Boolean notEnterFlg = false;
@@ -238,7 +211,7 @@ public class AttendanceController {
 
 	/**
 	 * 勤怠情報直接変更画面 『更新』ボタン押下
-	 * 
+	 * @author 瀧澤-Task27入力チェック
 	 * @param attendanceForm
 	 * @param model
 	 * @param result
@@ -249,7 +222,7 @@ public class AttendanceController {
 	public String complete(@ModelAttribute("attendanceForm") AttendanceForm attendanceForm,
 			BindingResult result, Model model) throws ParseException {
 
-		// Task27 入力チェック
+		//  入力チェック
 		if (!result.hasErrors()) {
 			studentAttendanceService.updateInputCheck(attendanceForm, result);
 		}
@@ -285,15 +258,14 @@ public class AttendanceController {
 				loginUserDto.getCourseId(),
 				loginUserDto.getLmsUserId());
 
-		model.addAttribute("attendanceManagementDtoList",
-				attendanceManagementDtoList);
+		model.addAttribute("attendanceManagementDtoList",attendanceManagementDtoList);
 
 		return "attendance/detail";
 	}
 
 	/**
 	 * 勤怠情報確認（受講生一覧）初期表示・検索処理
-	 *
+	 *@author 瀧澤
 	 * Task57：講師向け機能
 	 * Task71：企業担当者向け機能
 	 *
@@ -304,19 +276,19 @@ public class AttendanceController {
 	@RequestMapping("/list")
 	public String list(@ModelAttribute("attendanceSearchForm") AttendanceSearchForm attendanceSearchForm, Model model) {
 
-		// ① Task71：企業担当者か判定
+		// ①企業担当者か判定
 		boolean isCompany = loginUserUtil.isCompany();
 
-		// ② Task71：画面表示条件を設定
+		// ② 画面表示条件を設定
 		model.addAttribute("showPastFlg", isCompany);
 
-		// Task71：設定期間の表示文字列を取得
+		//設定期間の表示文字列を取得
 		String pastTimeLabel = messageUtil.getMessage("setting.search.pastTimeLabel");
 
 		// 画面に設定
 		model.addAttribute("pastTimeLabel", pastTimeLabel);
 
-		// ④ Task71：企業担当者以外は経過フラグを使用しない
+		// ④ 企業担当者以外は経過フラグを使用しない
 		if (!isCompany) {
 			attendanceSearchForm.setPastFlg(0);
 		}
@@ -340,6 +312,7 @@ public class AttendanceController {
 	}
 
 	/**
+	 * @author 瀧澤
 	 * Task.58 勤怠一括登録画面 初期表示
 	 */
 	@RequestMapping(path = "/bulkRegist", method = RequestMethod.GET)
@@ -369,6 +342,7 @@ public class AttendanceController {
 	/**
 	 * Task.58 勤怠一括登録画面
 	 * 検索ボタン押下処理
+	 * @author　瀧澤
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 * @param result 入力チェック結果
@@ -380,10 +354,10 @@ public class AttendanceController {
 	public String bulkRegistSearch(@ModelAttribute("bulkRegistForm") BulkRegistForm bulkRegistForm,
 			BindingResult result, Model model) throws ParseException {
 
-		// ① Task.58 会場情報の設定
+		// ① 会場情報の設定
 		studentAttendanceService.setBulkRegistForm(bulkRegistForm);
 
-		// ② Task.58 検索時の入力チェック
+		// ② 検索時の入力チェック
 		studentAttendanceService.searchInputCheck(bulkRegistForm, result);
 
 		// ③ 入力エラーがある場合
@@ -391,7 +365,7 @@ public class AttendanceController {
 			return "attendance/bulkRegist";
 		}
 
-		// ④ Task.58 ユーザー勤怠情報の取得
+		// ④ ユーザー勤怠情報の取得
 		studentAttendanceService.getUserAttendance(bulkRegistForm);
 
 		// ⑤ 勤怠一括登録画面を表示
@@ -401,6 +375,7 @@ public class AttendanceController {
 	/**
 	 * Task.58 勤怠一括登録画面
 	 * 『確定する』ボタン押下処理
+	 * @author　瀧澤
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
 	 * @param result 入力チェック結果
