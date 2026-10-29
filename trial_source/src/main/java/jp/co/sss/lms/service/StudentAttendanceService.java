@@ -268,8 +268,7 @@ public class StudentAttendanceService {
 	 * @param attendanceManagementDtoList
 	 * @return 勤怠編集フォーム
 	 */
-	public AttendanceForm setAttendanceForm(
-			List<AttendanceManagementDto> attendanceManagementDtoList) {
+	public AttendanceForm setAttendanceForm(List<AttendanceManagementDto> attendanceManagementDtoList) {
 
 		AttendanceForm attendanceForm = new AttendanceForm();
 		attendanceForm.setAttendanceList(new ArrayList<DailyAttendanceForm>());

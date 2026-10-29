@@ -53,15 +53,6 @@ public class AttendanceController {
 	@Autowired
 	private UserService userService;
 
-	/**
-	 * 勤怠管理画面 初期表示
-	 *
-	 * @param lmsUserId LMSユーザーID
-	 * @param courseId コースID
-	 * @param model モデル
-	 * @return 勤怠管理画面
-	 * @throws ParseException
-	 */
 
 	/**
 	 * 勤怠管理画面 初期表示
@@ -221,6 +212,9 @@ public class AttendanceController {
 	@RequestMapping(path = "/update", params = "complete", method = RequestMethod.POST)
 	public String complete(@ModelAttribute("attendanceForm") AttendanceForm attendanceForm,
 			BindingResult result, Model model) throws ParseException {
+		
+		// Task26 時刻の形式変換
+		studentAttendanceService.formatConversion(attendanceForm);
 
 		//  入力チェック
 		if (!result.hasErrors()) {
@@ -245,10 +239,6 @@ public class AttendanceController {
 
 			return "attendance/update";
 		}
-
-		// Task26 時刻の形式変換
-		studentAttendanceService.formatConversion(attendanceForm);
-
 		// 更新
 		String message = studentAttendanceService.update(attendanceForm);
 		model.addAttribute("message", message);
