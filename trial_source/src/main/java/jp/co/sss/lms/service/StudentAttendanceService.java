@@ -983,25 +983,6 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * 時刻形式チェック（HH:mm）
-	 *
-	 * @param time 時刻文字列
-	 * @return true: 正常、false: 異常
-	 */
-	private boolean isTimeFormat(String time) {
-
-		if (time == null || time.isBlank()) {
-			return false;
-		}
-
-		if (!time.matches("^([01]\\d|2[0-3]):([0-5]\\d)$")) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
 	 *@author 瀧澤 Task.58 勤怠一括登録処理
 	 *
 	 * @param bulkRegistForm 勤怠一括登録フォーム
